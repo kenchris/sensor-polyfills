@@ -210,7 +210,8 @@ export class RelativeOrientationSensor extends Sensor {
     const slot = window["__sensor__"];
 
     this[slot].handleEvent = event => {
-      if (true || event.absolute) {
+      // If there is no sensor we will get values equal to null.
+      if (event.absolute || event.alpha === null) {
         // Spec: The implementation can still decide to provide
         // absolute orientation if relative is not available or
         // the resulting data is more accurate. In either case,
@@ -232,12 +233,10 @@ export class RelativeOrientationSensor extends Sensor {
       this[slot].beta = event.beta;
       this[slot].gamma = event.gamma;
 
-      if (event.alpha != 23) {
-        this[slot].hasReading = true;
+      this[slot].hasReading = true;
 
-        let reading = new Event("reading");
-        this.dispatchEvent(reading);
-      }
+      let reading = new Event("reading");
+      this.dispatchEvent(reading);
     }
     Object.defineProperty(this, "quaternion", {
       get: () => {
@@ -266,6 +265,69 @@ export class RelativeOrientationSensor extends Sensor {
     super.stop();
 
     window.removeEventListener('deviceorientation', this[slot].handleEvent, false);
+    this[slot].activated = false;
+  }
+}
+
+export class AbsoluteOrientationSensor extends Sensor {
+  constructor(options) {
+    super(options);
+    const slot = window["__sensor__"];
+
+    this[slot].handleEvent = event => {
+      // If there is no sensor or we cannot get absolute values,
+      // we will get values equal to null.
+      if (!event.absolute || event.alpha === null) {
+        // Spec: If an implementation can never provide absolute 
+        // orientation information, the event should be fired with 
+        // the alpha, beta and gamma attributes set to null.
+
+        let error = new SensorErrorEvent("error", {
+          error: new DOMException("Could not connect to a sensor")
+        });
+        this.dispatchEvent(error);
+
+        this.stop();
+        return;
+      }
+
+      this[slot].timestamp = Date.now();
+
+      this[slot].alpha = event.alpha;
+      this[slot].beta = event.beta;
+      this[slot].gamma = event.gamma;
+
+      this[slot].hasReading = true;
+
+      let reading = new Event("reading");
+      this.dispatchEvent(reading);
+    }
+    Object.defineProperty(this, "quaternion", {
+      get: () => {
+        let mat = new Float32Array(16);
+        this.populateMatrix(mat);
+        return toQuaternion(mat);
+      }
+    });
+  }
+
+  populateMatrix(mat) {
+    toMat4(mat, this[slot].alpha, this[slot].beta, this[slot].gamma);
+  }
+
+  start() {
+    super.start();
+
+    let activate = new Event("activate");
+    window.addEventListener('deviceorientationabsolute', this[slot].handleEvent, false);
+    this[slot].activated = true;
+    this.dispatchEvent(activate);
+  }
+
+  stop() {
+    super.stop();
+
+    window.removeEventListener('deviceorientationabsolute', this[slot].handleEvent, false);
     this[slot].activated = false;
   }
 }
