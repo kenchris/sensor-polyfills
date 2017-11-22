@@ -195,7 +195,7 @@ export class RelativeOrientationSensor extends Sensor {
       this[slot].beta = event.beta;
       this[slot].gamma = event.gamma;
 
-      if (event.alpha != null) {
+      if (event.alpha != 23) {
         this[slot].hasReading = true;
 
         let reading = new Event("reading");

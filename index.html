@@ -22,11 +22,28 @@ let sensor = new RelativeOrientationSensor();
     let mat = new Float32Array(16);
     sensor.populateMatrix(mat);
     const data = document.querySelector('#data');
-    data.innerHTML = mat;
+
+    let str = "";
+    for (let i = 0; i < 4; i++) {
+      const a = mat[i * 4 + 0].toPrecision(3);
+      const b = mat[i * 4 + 1].toPrecision(3);
+      const c = mat[i * 4 + 2].toPrecision(3);
+      const d = mat[i * 4 + 3].toPrecision(3);
+      str += `[${a}, ${b}, ${c}, ${d}]<br>`;
+    }
+    data.innerHTML = `Matrix:<br>${str}`;
+
     const quat = document.querySelector('#quat');
-    quat.innerHTML = `Quaternion: ${sensor.quaternion}`;
+
+    let q = sensor.quaternion;
+    const a = q[0].toPrecision(3);
+    const b = q[1].toPrecision(3);
+    const c = q[2].toPrecision(3);
+    const d = q[3].toPrecision(3); 
+    quat.innerHTML = `Quaternion: [${a}, ${b}, ${c}, ${d}]`;
+
     const timestamp = document.querySelector('#timestamp');
-    timestamp.innerHTML = sensor.timestamp;
+    timestamp.innerHTML = `Timestamp: ${sensor.timestamp}`;
   }
   sensor.onactivate = _ => {
     console.log("activating");
@@ -35,8 +52,6 @@ let sensor = new RelativeOrientationSensor();
   console.log(sensor instanceof Sensor);
   console.log(sensor instanceof EventTarget);
   console.log(sensor);
-  sensor.start();
-  sensor.stop();
   sensor.start();
 </script>
 
