@@ -202,7 +202,7 @@ export class RelativeOrientationSensor extends Sensor {
         this.dispatchEvent(reading);
       }
     }
-    Object.defineProperty(this, quaternion, {
+    Object.defineProperty(this, "quaternion", {
       get: () => {
         let mat = new Float32Array(16);
         this.populateMatrix(mat);
