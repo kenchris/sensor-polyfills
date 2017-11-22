@@ -1,0 +1,48 @@
+
+<script type="module">
+import { RelativeOrientationSensor, Sensor } from './motion-sensors.js';
+
+let log = console.log;
+console.log = (message, ...rest) => {
+  const div = document.querySelector('#console');
+  let child = document.createElement('div');
+  if (typeof(message) === 'object') {
+    child.innerText = `${message.constructor.name}{${Object.getOwnPropertyNames(message)}}`;
+  }
+  else
+    child.innerText = message;
+  div.appendChild(child);
+    
+  log.call(console, message, ...rest);
+}
+
+let sensor = new RelativeOrientationSensor();
+  sensor.onreading = (event) => {
+    const sensor = event.target;
+    let mat = new Float32Array(16);
+    sensor.populateMatrix(mat);
+    const data = document.querySelector('#data');
+    data.innerHTML = mat;
+    const quat = document.querySelector('#quat');
+    quat.innerHTML = sensor.quaternion;
+    const timestamp = document.querySelector('#timestamp');
+    timestamp.innerHTML = sensor.timestamp;
+  }
+  sensor.onactivate = _ => {
+    console.log("activating");
+    console.log("activated: " + sensor.activated);
+  };
+  console.log(sensor instanceof Sensor);
+  console.log(sensor instanceof EventTarget);
+  console.log(sensor);
+  sensor.start();
+  sensor.stop();
+  sensor.start();
+</script>
+
+<body>
+  <div id="data"></div>
+  <div id="quat"></div>
+  <div id="timestamp"></div>
+  <div id="console"></div>
+</body>
