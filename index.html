@@ -24,7 +24,7 @@ let sensor = new RelativeOrientationSensor();
     const data = document.querySelector('#data');
     data.innerHTML = mat;
     const quat = document.querySelector('#quat');
-    quat.innerHTML = sensor.quaternion;
+    quat.innerHTML = `Quaternion: ${sensor.quaternion}`;
     const timestamp = document.querySelector('#timestamp');
     timestamp.innerHTML = sensor.timestamp;
   }
