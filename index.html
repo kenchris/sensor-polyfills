@@ -17,7 +17,10 @@ console.log = (message, ...rest) => {
 }
 
 let sensor = new RelativeOrientationSensor();
-  sensor.onreading = (event) => {
+
+sensor.onerror = err => console.log(err);
+
+sensor.onreading = (event) => {
     const sensor = event.target;
     let mat = new Float32Array(16);
     sensor.populateMatrix(mat);

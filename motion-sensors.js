@@ -17,6 +17,8 @@
 //  attribute EventHandler onerror;
 //};
 
+const slot = window["__sensor__"] = Symbol("__sensor__");
+
 function defineProperties(target, descriptions) {
   for (const property in descriptions) {
     Object.defineProperty(target, property, {
@@ -28,11 +30,12 @@ function defineProperties(target, descriptions) {
 
 class EventTarget {
   constructor() {
+    this[slot] = new WeakMap;
     const _listeners = {};
 
     const defineOnEventListener = type => {
       Object.defineProperty(this, `on${type}`, {
-        set: value => { 
+        set: value => {
           let listeners = _listeners[type] || (_listeners[type] = [ null ]);
           listeners[0] = { target: this, listener: value };
         },
@@ -84,9 +87,10 @@ class EventTarget {
     defineProperties(this, {
       addEventListener: addEventListener,
       removeEventListener: removeEventListener,
-      dispatchEvent: dispatchEvent,
-      __defineOnEventListener__: defineOnEventListener
+      dispatchEvent: dispatchEvent
     });
+
+    this[slot].defineOnEventListener = defineOnEventListener
   }
 }
 
@@ -100,14 +104,12 @@ function defineReadonlyProperties(target, slot, descriptions) {
   }
 }
 
-const slot = window["__sensor__"] = Symbol("internal");
-
 export class Sensor extends EventTarget {
   constructor(options) {
     super();
-    this.__defineOnEventListener__("reading");
-    this.__defineOnEventListener__("activate");
-    this.__defineOnEventListener__("error");
+    this[slot].defineOnEventListener("reading");
+    this[slot].defineOnEventListener("activate");
+    this[slot].defineOnEventListener("error");
 
     defineReadonlyProperties(this, slot, {
       activated: false,
@@ -138,7 +140,7 @@ export class Sensor extends EventTarget {
 	const x = (mat[9] - mat[6]) / w4;
 	const y = (mat[2] - mat[8]) / w4;
   const z = (mat[4] - mat[1]) / w4;
-  
+
   return [x, y, z, w];
 }
 
@@ -183,12 +185,47 @@ function toMat4(mat, alpha, beta, gamma) {
   return mat;
 };
 
+class SensorErrorEvent extends Event {
+  constructor(type, errorEventInitDict) {
+    super(type, errorEventInitDict);
+
+    if (!errorEventInitDict || !errorEventInitDict.error instanceof DOMException) {
+      throw TypeError(
+        "Failed to construct 'SensorErrorEvent':" +
+        "2nd argument much contain 'error' property"
+      );
+    }
+
+    Object.defineProperty(this, "error", {
+      configurable: false,
+      writable: false,
+      value: errorEventInitDict.error
+    });
+  }
+};
+
 export class RelativeOrientationSensor extends Sensor {
   constructor(options) {
     super(options);
     const slot = window["__sensor__"];
 
     this[slot].handleEvent = event => {
+      if (true || event.absolute) {
+        // Spec: The implementation can still decide to provide
+        // absolute orientation if relative is not available or
+        // the resulting data is more accurate. In either case,
+        // the absolute property must be set accordingly to reflect
+        // the choice.
+
+        let error = new SensorErrorEvent("error", {
+          error: new DOMException("Could not connect to a sensor")
+        });
+        this.dispatchEvent(error);
+
+        this.stop();
+        return;
+      }
+
       this[slot].timestamp = Date.now();
 
       this[slot].alpha = event.alpha;
