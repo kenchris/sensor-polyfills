@@ -353,3 +353,114 @@ export class Gyroscope extends DeviceOrientationMixin(Sensor, "devicemotion") {
     });
   }
 }
+
+export class Accelerometer extends DeviceOrientationMixin(Sensor, "devicemotion") {
+  constructor(options) {
+    super(options);
+    this[slot].handleEvent = event => {
+      // If there is no sensor we will get values equal to null.
+      if (event.accelerationIncludingGravity.x === null) {
+        let error = new SensorErrorEvent("error", {
+          error: new DOMException("Could not connect to a sensor")
+        });
+        this.dispatchEvent(error);
+
+        this.stop();
+        return;
+      }
+
+      this[slot].timestamp = Date.now();
+
+      this[slot].x = event.accelerationIncludingGravity.x;
+      this[slot].y = event.accelerationIncludingGravity.y;
+      this[slot].z = event.accelerationIncludingGravity.z;
+
+      this[slot].hasReading = true;
+      this.dispatchEvent(new Event("reading"));
+    }
+
+    Object.defineProperty(this, "x", {
+      get: () => this[slot].x
+    });
+    Object.defineProperty(this, "y", {
+      get: () => this[slot].y
+    });
+    Object.defineProperty(this, "z", {
+      get: () => this[slot].z
+    });
+  }
+}
+
+export class LinearAccelerationSensor extends DeviceOrientationMixin(Sensor, "devicemotion") {
+  constructor(options) {
+    super(options);
+    this[slot].handleEvent = event => {
+      // If there is no sensor we will get values equal to null.
+      if (event.acceleration.x === null) {
+        let error = new SensorErrorEvent("error", {
+          error: new DOMException("Could not connect to a sensor")
+        });
+        this.dispatchEvent(error);
+
+        this.stop();
+        return;
+      }
+
+      this[slot].timestamp = Date.now();
+
+      this[slot].x = event.acceleration.x;
+      this[slot].y = event.acceleration.y;
+      this[slot].z = event.acceleration.z;
+
+      this[slot].hasReading = true;
+      this.dispatchEvent(new Event("reading"));
+    }
+
+    Object.defineProperty(this, "x", {
+      get: () => this[slot].x
+    });
+    Object.defineProperty(this, "y", {
+      get: () => this[slot].y
+    });
+    Object.defineProperty(this, "z", {
+      get: () => this[slot].z
+    });
+  }
+}
+
+export class GravitySensor extends DeviceOrientationMixin(Sensor, "devicemotion") {
+  constructor(options) {
+    super(options);
+    this[slot].handleEvent = event => {
+      // If there is no sensor we will get values equal to null.
+      if (event.acceleration.x === null || event.accelerationIncludingGravity.x === null) {
+        let error = new SensorErrorEvent("error", {
+          error: new DOMException("Could not connect to a sensor")
+        });
+        this.dispatchEvent(error);
+
+        this.stop();
+        return;
+      }
+
+      this[slot].timestamp = Date.now();
+
+      this[slot].x = event.accelerationIncludingGravity.x - event.acceleration.x;
+      this[slot].y = event.accelerationIncludingGravity.y - event.acceleration.y;
+      this[slot].z = event.accelerationIncludingGravity.z - event.acceleration.z;
+
+      this[slot].hasReading = true;
+      this.dispatchEvent(new Event("reading"));
+    }
+
+    Object.defineProperty(this, "x", {
+      get: () => this[slot].x
+    });
+    Object.defineProperty(this, "y", {
+      get: () => this[slot].y
+    });
+    Object.defineProperty(this, "z", {
+      get: () => this[slot].z
+    });
+  }
+}

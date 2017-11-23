@@ -1,6 +1,14 @@
 
 <script type="module">
-import { RelativeOrientationSensor, Sensor, Gyroscope } from './motion-sensors.js';
+import {
+  Sensor,
+  AbsoluteOrientationSensor,
+  RelativeOrientationSensor,
+  Gyroscope,
+  Accelerometer,
+  LinearAccelerationSensor,
+  GravitySensor
+} from './motion-sensors.js';
 
 let log = console.log;
 console.log = (message, ...rest) => {
