@@ -1,0 +1,26 @@
+{
+  "name": "motion-sensors-polyfill",
+  "version": "0.1.0",
+  "description": "A polyfill for the motion sensors based on the W3C Generic Sensor API",
+  "main": "motion-sensors.js",
+  "module": "motion-sensors.js",
+  "files": [
+    "motion-sensors.js",
+    "/src/"
+  ],
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "build": "cp src/motion-sensors.js .",
+    "test": "npm run build",
+    "checksize": "uglifyjs motion-sensors.js -mc --toplevel | gzip -9 | wc -c"
+  },
+  "author": "Kenneth Rohde Christiansen <kenneth.christiansen@gmail.com>",
+  "homepage": "https://github.com/kenchris/lit-element",
+  "license": "BSD-3-Clause",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kenchris/sensor-polyfills.git"
+  }
+}
