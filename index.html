@@ -64,7 +64,7 @@ sensor.onreading = (event) => {
     }
 
     let mat2 = new Float32Array(16);
-    sensor.populateMatrix2(mat2);
+    sensor.__populateMatrixEuler(mat2);
 
     let str2 = "";
     for (let i = 0; i < 3; i++) {
@@ -74,7 +74,7 @@ sensor.onreading = (event) => {
       str2 += `[${a}, ${b}, ${c}]<br>`;
     }
 
-    data.innerHTML = `E Matrix:<br>${str}<br> Q Matrix:<br>${str2}`;
+    data.innerHTML = `QMatrix:<br>${str}<br> EMatrix:<br>${str2}`;
 
     const quat = document.querySelector('#quat');
 
@@ -84,15 +84,22 @@ sensor.onreading = (event) => {
     const c = format(q[2]);
     const d = format(q[3]);
 
-    let q2 = sensor.quaternion2;
-    const a2 = q2[0].toFixed(3);
-    const b2 = q2[1].toFixed(3);
-    const c2 = q2[2].toFixed(3);
-    const d2 = q2[3].toFixed(3);
+    let q2 = sensor.__quaternionQMatrix;
+    const a2 = format(q2[0]);
+    const b2 = format(q2[1]);
+    const c2 = format(q2[2]);
+    const d2 = format(q2[3]);
+
+    let q3 = sensor.__quaternionEMatrix;
+    const a3 = format(q3[0]);
+    const b3 = format(q3[1]);
+    const c3 = format(q3[2]);
+    const d3 = format(q3[3]);
 
     quat.innerHTML = `
-      Quaternion: [${a}, ${b}, ${c}, ${d}]
-      Mat Quaternion: [${a2}, ${b2}, ${c2}, ${d2}]`;
+      <br>PureQuaternion: [x: ${a}, y: ${b}, z: ${c}, w: ${d}]
+      <br>FromQuadMatrix: [x: ${a2}, y: ${b2}, z: ${c2}, w: ${d2}]
+      <br>FromEulerMatrix: [x: ${a3}, y: ${b3}, z: ${c3}, w: ${d3}]`;
 
     const timestamp = document.querySelector('#timestamp');
     timestamp.innerHTML = `Timestamp: ${sensor.timestamp}`;

@@ -168,25 +168,24 @@ function toQuaternionFromMat(mat) {
   return [x, y, z, w];
 }
 
-// http://d.hatena.ne.jp/ohtorii/20150424/p1
-function toQuaternionFromZXYEuler(alpha, beta, gamma) {
+function toQuaternionFromEuler(alpha, beta, gamma) {
   const degToRad = Math.PI / 180
 
   const x = (beta || 0) * degToRad;
   const y = (gamma || 0) * degToRad;
   const z = (alpha || 0) * degToRad;
 
-  const cz = Math.cos(z * 0.5);
-  const sz = Math.sin(z * 0.5);
-  const cy = Math.cos(y * 0.5);
-  const sy = Math.sin(y * 0.5);
-  const cx = Math.cos(x * 0.5);
-  const sx = Math.sin(x * 0.5);
+  const cZ = Math.cos(z * 0.5);
+  const sZ = Math.sin(z * 0.5);
+  const cY = Math.cos(y * 0.5);
+  const sY = Math.sin(y * 0.5);
+  const cX = Math.cos(x * 0.5);
+  const sX = Math.sin(x * 0.5);
 
-  const qw = sx*sy*sz+cx*cy*cz;
-  const qx = cx*sy*sz+cy*cz*sx;
-  const qy = cx*cz*sy-cy*sx*sz;
-  const qz = cx*cy*sz-cz*sx*sy;
+  const qx = sX * cY * cZ - cX * sY * sZ;
+  const qy = cX * sY * cZ + sX * cY * sZ;
+  const qz = cX * cY * sZ + sX * sY * cZ;
+  const qw = cX * cY * cZ - sX * sY * sZ;
 
   return [qx, qy, qz, qw];
 }
@@ -195,19 +194,19 @@ function toMat4FromQuat(mat, q) {
   const typed = mat instanceof Float32Array || mat instanceof Float64Array;
 
   if (typed && mat.length >= 16) {
-    mat[0] = 1 - 2 * q[1] ** 2 - 2 * q[2] ** 2
-    mat[1] = 2 * q[0] * q[1] - 2 * q[2] * q[3];
-    mat[2] = 2 * q[0] * q[2] + 2 * q[1] * q[3];
+    mat[0] = 1 - 2 * (q[1] ** 2 + q[2] ** 2);
+    mat[1] = 2 * (q[0] * q[1] - q[2] * q[3]);
+    mat[2] = 2 * (q[0] * q[2] + q[1] * q[3]);
     mat[3] = 0;
 
-    mat[4] = 2 * q[0] * q[1] + 2 * q[2] * q[3];
-    mat[5] = 1 - 2 * q[0] ** 2 - 2 * q[2] ** 2;
-    mat[6] = 2 * q[1] * q[2] - 2 * q[0] * q[3];
+    mat[4] = 2 * (q[0] * q[1] + q[2] * q[3]);
+    mat[5] = 1 - 2 * (q[0] ** 2 + q[2] ** 2);
+    mat[6] = 2 * (q[1] * q[2] - q[0] * q[3]);
     mat[7] = 0;
 
-    mat[8] = 2 * q[0] * q[2] - 2 * q[1] * q[3];
-    mat[9] = 2 * q[1] * q[2] + 2 * q[0] * q[3];
-    mat[10] = 1 - 2 * q[0] ** 2 - 2 * q[1] ** 2;
+    mat[8] = 2 * (q[0] * q[2] - q[1] * q[3]);
+    mat[9] = 2 * (q[1] * q[2] + q[0] * q[3]);
+    mat[10] = 1 - 2 * (q[0] ** 2 + q[1] ** 2);
     mat[11] = 0;
 
     mat[12] = 0;
@@ -220,7 +219,7 @@ function toMat4FromQuat(mat, q) {
 }
 
 // from: https://w3c.github.io/deviceorientation/spec-source-orientation.html#worked-example-2
-function toMat4FromZXYEuler(mat, alpha, beta, gamma) {
+function toMat4FromEuler(mat, alpha, beta, gamma) {
   const degToRad = Math.PI / 180
 
   const x = (beta || 0) * degToRad;
@@ -283,8 +282,6 @@ class SensorErrorEvent extends Event {
 export class RelativeOrientationSensor extends DeviceOrientationMixin(Sensor, "deviceorientation") {
   constructor(options) {
     super(options);
-    const slot = window["__sensor__"];
-
     this[slot].handleEvent = event => {
       // If there is no sensor we will get values equal to null.
       if (event.absolute || event.alpha === null) {
@@ -308,7 +305,7 @@ export class RelativeOrientationSensor extends DeviceOrientationMixin(Sensor, "d
       this[slot].alpha = event.alpha;
       this[slot].beta = event.beta;
       this[slot].gamma = event.gamma;
-      this[slot].quaternion = toQuaternionFromZXYEuler(event.alpha, event.beta, event.gamma);
+      this[slot].quaternion = toQuaternionFromEuler(event.alpha, event.beta, event.gamma);
 
       this[slot].hasReading = true;
       this.dispatchEvent(new Event("reading"));
@@ -317,29 +314,35 @@ export class RelativeOrientationSensor extends DeviceOrientationMixin(Sensor, "d
     defineReadonlyProperties(this, slot, {
       quaternion: null
     });
-    Object.defineProperty(this, "quaternion2", {
+
+    Object.defineProperty(this, "__quaternionQMatrix", {
       get: () => {
         let mat = new Float32Array(16);
-        this.populateMatrix2(mat);
+        this.populateMatrix(mat);
+        return toQuaternionFromMat(mat);
+      }
+    });
+    Object.defineProperty(this, "__quaternionEMatrix", {
+      get: () => {
+        let mat = new Float32Array(16);
+        this.__populateMatrixEuler(mat);
         return toQuaternionFromMat(mat);
       }
     });
   }
 
-  populateMatrix2(mat) {
+  populateMatrix(mat) {
     toMat4FromQuat(mat, this[slot].quaternion);
   }
 
-  populateMatrix(mat) {
-    toMat4FromZXYEuler(mat, this[slot].alpha, this[slot].beta, this[slot].gamma);
+  __populateMatrixEuler(mat) {
+    toMat4FromEuler(mat, this[slot].alpha, this[slot].beta, this[slot].gamma);
   }
 }
 
 export class AbsoluteOrientationSensor extends DeviceOrientationMixin(Sensor, "deviceorientationabsolute") {
   constructor(options) {
     super(options);
-    const slot = window["__sensor__"];
-
     this[slot].handleEvent = event => {
       // If there is no sensor or we cannot get absolute values,
       // we will get values equal to null.
@@ -362,21 +365,19 @@ export class AbsoluteOrientationSensor extends DeviceOrientationMixin(Sensor, "d
       this[slot].alpha = event.alpha;
       this[slot].beta = event.beta;
       this[slot].gamma = event.gamma;
+      this[slot].quaternion = toQuaternionFromEuler(event.alpha, event.beta, event.gamma);
 
       this[slot].hasReading = true;
       this.dispatchEvent(new Event("reading"));
     }
-    Object.defineProperty(this, "quaternion", {
-      get: () => {
-        let mat = new Float32Array(16);
-        this.populateMatrix(mat);
-        return toQuaternion(mat);
-      }
+
+    defineReadonlyProperties(this, slot, {
+      quaternion: null
     });
   }
 
   populateMatrix(mat) {
-    toMat4(mat, this[slot].alpha, this[slot].beta, this[slot].gamma);
+    toMat4FromQuat(mat, this[slot].quaternion);
   }
 }
 
