@@ -24,7 +24,7 @@ console.log = (message, ...rest) => {
   log.call(console, message, ...rest);
 }
 
-/*
+
 let gyro = new Gyroscope({ frequency: 50 });
 
 gyro.onerror = err => console.log(err);
@@ -38,8 +38,9 @@ gyro.onreading = (event) => {
   data.innerHTML = `[${sensor.alpha}, ${sensor.beta}, ${sensor.gamma}]`;
 }
 gyro.start();
-*/
 
+
+/*
 let sensor = new RelativeOrientationSensor();
 
 sensor.onerror = err => console.log(err);
@@ -80,7 +81,7 @@ sensor.onreading = (event) => {
   console.log(sensor instanceof EventTarget);
   console.log(sensor);
   sensor.start();
-
+*/
 </script>
 
 <body>

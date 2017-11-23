@@ -342,14 +342,10 @@ export class Gyroscope extends DeviceOrientationMixin(Sensor, "devicemotion") {
       this.dispatchEvent(new Event("reading"));
     }
 
-    Object.defineProperty(this, "alpha", {
-      get: () => this[slot].alpha
-    });
-    Object.defineProperty(this, "beta", {
-      get: () => this[slot].beta
-    });
-    Object.defineProperty(this, "gamma", {
-      get: () => this[slot].gamma
+    defineReadonlyProperties(this, slot, {
+      alpha: null,
+      beta: null,
+      gamma: null
     });
   }
 }
@@ -379,14 +375,10 @@ export class Accelerometer extends DeviceOrientationMixin(Sensor, "devicemotion"
       this.dispatchEvent(new Event("reading"));
     }
 
-    Object.defineProperty(this, "x", {
-      get: () => this[slot].x
-    });
-    Object.defineProperty(this, "y", {
-      get: () => this[slot].y
-    });
-    Object.defineProperty(this, "z", {
-      get: () => this[slot].z
+    defineReadonlyProperties(this, slot, {
+      alpha: null,
+      beta: null,
+      gamma: null
     });
   }
 }
@@ -416,14 +408,10 @@ export class LinearAccelerationSensor extends DeviceOrientationMixin(Sensor, "de
       this.dispatchEvent(new Event("reading"));
     }
 
-    Object.defineProperty(this, "x", {
-      get: () => this[slot].x
-    });
-    Object.defineProperty(this, "y", {
-      get: () => this[slot].y
-    });
-    Object.defineProperty(this, "z", {
-      get: () => this[slot].z
+    defineReadonlyProperties(this, slot, {
+      alpha: null,
+      beta: null,
+      gamma: null
     });
   }
 }
@@ -453,14 +441,10 @@ export class GravitySensor extends DeviceOrientationMixin(Sensor, "devicemotion"
       this.dispatchEvent(new Event("reading"));
     }
 
-    Object.defineProperty(this, "x", {
-      get: () => this[slot].x
-    });
-    Object.defineProperty(this, "y", {
-      get: () => this[slot].y
-    });
-    Object.defineProperty(this, "z", {
-      get: () => this[slot].z
+    defineReadonlyProperties(this, slot, {
+      alpha: null,
+      beta: null,
+      gamma: null
     });
   }
 }
