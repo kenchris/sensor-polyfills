@@ -134,6 +134,28 @@ export class Sensor extends EventTarget {
   stop() { }
 }
 
+const DeviceOrientationMixin = (superclass, eventName) => class extends superclass {
+  constructor(...args) {
+    super(args);
+  }
+
+  start() {
+    super.start();
+
+    let activate = new Event("activate");
+    window.addEventListener(eventName, this[slot].handleEvent, false);
+    this[slot].activated = true;
+    this.dispatchEvent(activate);
+  }
+
+  stop() {
+    super.stop();
+
+    window.removeEventListener(eventName, this[slot].handleEvent, false);
+    this[slot].activated = false;
+  }
+};
+
  function toQuaternion(mat) {
 	const w = Math.sqrt(1.0 + mat[0] + mat[5] + mat[10]) / 2.0;
 	const w4 = (4.0 * w);
@@ -204,7 +226,7 @@ class SensorErrorEvent extends Event {
   }
 };
 
-export class RelativeOrientationSensor extends Sensor {
+export class RelativeOrientationSensor extends DeviceOrientationMixin(Sensor, "deviceorientation") {
   constructor(options) {
     super(options);
     const slot = window["__sensor__"];
@@ -234,9 +256,7 @@ export class RelativeOrientationSensor extends Sensor {
       this[slot].gamma = event.gamma;
 
       this[slot].hasReading = true;
-
-      let reading = new Event("reading");
-      this.dispatchEvent(reading);
+      this.dispatchEvent(new Event("reading"));
     }
     Object.defineProperty(this, "quaternion", {
       get: () => {
@@ -250,26 +270,9 @@ export class RelativeOrientationSensor extends Sensor {
   populateMatrix(mat) {
     toMat4(mat, this[slot].alpha, this[slot].beta, this[slot].gamma);
   }
-
-  start() {
-    super.start();
-
-    let activate = new Event("activate");
-
-    window.addEventListener('deviceorientation', this[slot].handleEvent, false);
-    this[slot].activated = true;
-    this.dispatchEvent(activate);
-  }
-
-  stop() {
-    super.stop();
-
-    window.removeEventListener('deviceorientation', this[slot].handleEvent, false);
-    this[slot].activated = false;
-  }
 }
 
-export class AbsoluteOrientationSensor extends Sensor {
+export class AbsoluteOrientationSensor extends DeviceOrientationMixin(Sensor, "deviceorientationabsolute") {
   constructor(options) {
     super(options);
     const slot = window["__sensor__"];
@@ -298,9 +301,7 @@ export class AbsoluteOrientationSensor extends Sensor {
       this[slot].gamma = event.gamma;
 
       this[slot].hasReading = true;
-
-      let reading = new Event("reading");
-      this.dispatchEvent(reading);
+      this.dispatchEvent(new Event("reading"));
     }
     Object.defineProperty(this, "quaternion", {
       get: () => {
@@ -314,20 +315,41 @@ export class AbsoluteOrientationSensor extends Sensor {
   populateMatrix(mat) {
     toMat4(mat, this[slot].alpha, this[slot].beta, this[slot].gamma);
   }
+}
 
-  start() {
-    super.start();
+export class Gyroscope extends DeviceOrientationMixin(Sensor, "devicemotion") {
+  constructor(options) {
+    super(options);
+    this[slot].handleEvent = event => {
+      // If there is no sensor we will get values equal to null.
+      if (event.rotationRate.alpha === null) {
+        let error = new SensorErrorEvent("error", {
+          error: new DOMException("Could not connect to a sensor")
+        });
+        this.dispatchEvent(error);
 
-    let activate = new Event("activate");
-    window.addEventListener('deviceorientationabsolute', this[slot].handleEvent, false);
-    this[slot].activated = true;
-    this.dispatchEvent(activate);
-  }
+        this.stop();
+        return;
+      }
 
-  stop() {
-    super.stop();
+      this[slot].timestamp = Date.now();
 
-    window.removeEventListener('deviceorientationabsolute', this[slot].handleEvent, false);
-    this[slot].activated = false;
+      this[slot].alpha = event.rotationRate.alpha;
+      this[slot].beta = event.rotationRate.beta;
+      this[slot].gamma = event.rotationRate.gamma;
+
+      this[slot].hasReading = true;
+      this.dispatchEvent(new Event("reading"));
+    }
+
+    Object.defineProperty(this, "alpha", {
+      get: () => this[slot].alpha
+    });
+    Object.defineProperty(this, "beta", {
+      get: () => this[slot].beta
+    });
+    Object.defineProperty(this, "gamma", {
+      get: () => this[slot].gamma
+    });
   }
 }

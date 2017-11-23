@@ -1,6 +1,6 @@
 
 <script type="module">
-import { RelativeOrientationSensor, Sensor } from './motion-sensors.js';
+import { RelativeOrientationSensor, Sensor, Gyroscope } from './motion-sensors.js';
 
 let log = console.log;
 console.log = (message, ...rest) => {
@@ -15,6 +15,22 @@ console.log = (message, ...rest) => {
     
   log.call(console, message, ...rest);
 }
+
+/*
+let gyro = new Gyroscope({ frequency: 50 });
+
+gyro.onerror = err => console.log(err);
+gyro.onreading = (event) => {
+  const sensor = event.target;
+
+  const timestamp = document.querySelector('#timestamp');
+  timestamp.innerHTML = `Timestamp: ${sensor.timestamp}`;
+
+  const data = document.querySelector('#data');
+  data.innerHTML = `[${sensor.alpha}, ${sensor.beta}, ${sensor.gamma}]`;
+}
+gyro.start();
+*/
 
 let sensor = new RelativeOrientationSensor();
 
@@ -56,6 +72,7 @@ sensor.onreading = (event) => {
   console.log(sensor instanceof EventTarget);
   console.log(sensor);
   sensor.start();
+
 </script>
 
 <body>
