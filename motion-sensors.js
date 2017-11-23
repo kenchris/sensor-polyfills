@@ -1,22 +1,4 @@
 // @ts-check
-
-
-// dictionary SensorOptions {
-//  double frequency;
-//};
-
-//[SecureContext, Exposed=Window]
-//interface Sensor : EventTarget {
-//  readonly attribute boolean activated;
-//  readonly attribute boolean hasReading;
-//  readonly attribute DOMHighResTimeStamp? timestamp;
-//  void start();
-//  void stop();
-//  attribute EventHandler onreading;
-//  attribute EventHandler onactivate;
-//  attribute EventHandler onerror;
-//};
-
 const slot = window["__sensor__"] = Symbol("__sensor__");
 
 function defineProperties(target, descriptions) {
