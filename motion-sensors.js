@@ -156,29 +156,83 @@ const DeviceOrientationMixin = (superclass, eventName) => class extends supercla
   }
 };
 
- function toQuaternion(mat) {
-	const w = Math.sqrt(1.0 + mat[0] + mat[5] + mat[10]) / 2.0;
-	const w4 = (4.0 * w);
-	const x = (mat[9] - mat[6]) / w4;
-	const y = (mat[2] - mat[8]) / w4;
+// Tait-Bryan angles of type Z-X'-Y'' (alpha, beta, gamma)
+
+function toQuaternionFromMat(mat) {
+  const w = Math.sqrt(1.0 + mat[0] + mat[5] + mat[10]) / 2.0;
+  const w4 = (4.0 * w);
+  const x = (mat[9] - mat[6]) / w4;
+  const y = (mat[2] - mat[8]) / w4;
   const z = (mat[4] - mat[1]) / w4;
 
   return [x, y, z, w];
 }
 
-function toMat4(mat, alpha, beta, gamma) {
+// http://d.hatena.ne.jp/ohtorii/20150424/p1
+function toQuaternionFromZXYEuler(alpha, beta, gamma) {
   const degToRad = Math.PI / 180
 
-  const z = (alpha || 0) * degToRad;
   const x = (beta || 0) * degToRad;
   const y = (gamma || 0) * degToRad;
+  const z = (alpha || 0) * degToRad;
 
-  const cX = Math.cos(x);
-  const cY = Math.cos(y);
-  const cZ = Math.cos(z);
-  const sX = Math.sin(x);
-  const sY = Math.sin(y);
-  const sZ = Math.sin(z);
+  const cz = Math.cos(z * 0.5);
+  const sz = Math.sin(z * 0.5);
+  const cy = Math.cos(y * 0.5);
+  const sy = Math.sin(y * 0.5);
+  const cx = Math.cos(x * 0.5);
+  const sx = Math.sin(x * 0.5);
+
+  const qw = sx*sy*sz+cx*cy*cz;
+  const qx = cx*sy*sz+cy*cz*sx;
+  const qy = cx*cz*sy-cy*sx*sz;
+  const qz = cx*cy*sz-cz*sx*sy;
+
+  return [qx, qy, qz, qw];
+}
+
+function toMat4FromQuat(mat, q) {
+  const typed = mat instanceof Float32Array || mat instanceof Float64Array;
+
+  if (typed && mat.length >= 16) {
+    mat[0] = 1 - 2 * q[1] ** 2 - 2 * q[2] ** 2
+    mat[1] = 2 * q[0] * q[1] - 2 * q[2] * q[3];
+    mat[2] = 2 * q[0] * q[2] + 2 * q[1] * q[3];
+    mat[3] = 0;
+
+    mat[4] = 2 * q[0] * q[1] + 2 * q[2] * q[3];
+    mat[5] = 1 - 2 * q[0] ** 2 - 2 * q[2] ** 2;
+    mat[6] = 2 * q[1] * q[2] - 2 * q[0] * q[3];
+    mat[7] = 0;
+
+    mat[8] = 2 * q[0] * q[2] - 2 * q[1] * q[3];
+    mat[9] = 2 * q[1] * q[2] + 2 * q[0] * q[3];
+    mat[10] = 1 - 2 * q[0] ** 2 - 2 * q[1] ** 2;
+    mat[11] = 0;
+
+    mat[12] = 0;
+    mat[13] = 0;
+    mat[14] = 0;
+    mat[15] = 1;
+  }
+
+  return mat;
+}
+
+// from: https://w3c.github.io/deviceorientation/spec-source-orientation.html#worked-example-2
+function toMat4FromZXYEuler(mat, alpha, beta, gamma) {
+  const degToRad = Math.PI / 180
+
+  const x = (beta || 0) * degToRad;
+  const y = (gamma || 0) * degToRad;
+  const z = (alpha || 0) * degToRad;
+
+  var cX = Math.cos(x);
+  var cY = Math.cos(y);
+  var cZ = Math.cos(z);
+  var sX = Math.sin(x);
+  var sY = Math.sin(y);
+  var sZ = Math.sin(z);
 
   const typed = mat instanceof Float32Array || mat instanceof Float64Array;
 
@@ -249,26 +303,35 @@ export class RelativeOrientationSensor extends DeviceOrientationMixin(Sensor, "d
         return;
       }
 
-      this[slot].timestamp = Date.now();
+      this[slot].timestamp = performance.now();
 
       this[slot].alpha = event.alpha;
       this[slot].beta = event.beta;
       this[slot].gamma = event.gamma;
+      this[slot].quaternion = toQuaternionFromZXYEuler(event.alpha, event.beta, event.gamma);
 
       this[slot].hasReading = true;
       this.dispatchEvent(new Event("reading"));
     }
-    Object.defineProperty(this, "quaternion", {
+
+    defineReadonlyProperties(this, slot, {
+      quaternion: null
+    });
+    Object.defineProperty(this, "quaternion2", {
       get: () => {
         let mat = new Float32Array(16);
-        this.populateMatrix(mat);
-        return toQuaternion(mat);
+        this.populateMatrix2(mat);
+        return toQuaternionFromMat(mat);
       }
     });
   }
 
+  populateMatrix2(mat) {
+    toMat4FromQuat(mat, this[slot].quaternion);
+  }
+
   populateMatrix(mat) {
-    toMat4(mat, this[slot].alpha, this[slot].beta, this[slot].gamma);
+    toMat4FromZXYEuler(mat, this[slot].alpha, this[slot].beta, this[slot].gamma);
   }
 }
 
@@ -281,8 +344,8 @@ export class AbsoluteOrientationSensor extends DeviceOrientationMixin(Sensor, "d
       // If there is no sensor or we cannot get absolute values,
       // we will get values equal to null.
       if (!event.absolute || event.alpha === null) {
-        // Spec: If an implementation can never provide absolute 
-        // orientation information, the event should be fired with 
+        // Spec: If an implementation can never provide absolute
+        // orientation information, the event should be fired with
         // the alpha, beta and gamma attributes set to null.
 
         let error = new SensorErrorEvent("error", {
@@ -294,7 +357,7 @@ export class AbsoluteOrientationSensor extends DeviceOrientationMixin(Sensor, "d
         return;
       }
 
-      this[slot].timestamp = Date.now();
+      this[slot].timestamp = performance.now();
 
       this[slot].alpha = event.alpha;
       this[slot].beta = event.beta;
@@ -322,7 +385,7 @@ export class Gyroscope extends DeviceOrientationMixin(Sensor, "devicemotion") {
     super(options);
     this[slot].handleEvent = event => {
       // If there is no sensor we will get values equal to null.
-      if (event.rotationRate.alpha === null) {
+      if (false && event.rotationRate.alpha === null) {
         let error = new SensorErrorEvent("error", {
           error: new DOMException("Could not connect to a sensor")
         });
@@ -332,7 +395,7 @@ export class Gyroscope extends DeviceOrientationMixin(Sensor, "devicemotion") {
         return;
       }
 
-      this[slot].timestamp = Date.now();
+      this[slot].timestamp = performance.now();
 
       this[slot].alpha = event.rotationRate.alpha;
       this[slot].beta = event.rotationRate.beta;
@@ -365,7 +428,7 @@ export class Accelerometer extends DeviceOrientationMixin(Sensor, "devicemotion"
         return;
       }
 
-      this[slot].timestamp = Date.now();
+      this[slot].timestamp = performance.now();
 
       this[slot].x = event.accelerationIncludingGravity.x;
       this[slot].y = event.accelerationIncludingGravity.y;
@@ -398,7 +461,7 @@ export class LinearAccelerationSensor extends DeviceOrientationMixin(Sensor, "de
         return;
       }
 
-      this[slot].timestamp = Date.now();
+      this[slot].timestamp = performance.now();
 
       this[slot].x = event.acceleration.x;
       this[slot].y = event.acceleration.y;
@@ -431,7 +494,7 @@ export class GravitySensor extends DeviceOrientationMixin(Sensor, "devicemotion"
         return;
       }
 
-      this[slot].timestamp = Date.now();
+      this[slot].timestamp = performance.now();
 
       this[slot].x = event.accelerationIncludingGravity.x - event.acceleration.x;
       this[slot].y = event.accelerationIncludingGravity.y - event.acceleration.y;

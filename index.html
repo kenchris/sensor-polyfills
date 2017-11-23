@@ -20,11 +20,11 @@ console.log = (message, ...rest) => {
   else
     child.innerText = message;
   div.appendChild(child);
-    
+
   log.call(console, message, ...rest);
 }
 
-
+/*
 let gyro = new Gyroscope({ frequency: 50 });
 
 gyro.onerror = err => console.log(err);
@@ -38,37 +38,61 @@ gyro.onreading = (event) => {
   data.innerHTML = `[${sensor.alpha}, ${sensor.beta}, ${sensor.gamma}]`;
 }
 gyro.start();
+*/
 
+function format(num) {
+  return num.toFixed(3).padStart(6).replace(' ', '&nbsp;');
+}
 
-/*
 let sensor = new RelativeOrientationSensor();
 
 sensor.onerror = err => console.log(err);
 
 sensor.onreading = (event) => {
     const sensor = event.target;
+
     let mat = new Float32Array(16);
     sensor.populateMatrix(mat);
     const data = document.querySelector('#data');
 
     let str = "";
-    for (let i = 0; i < 4; i++) {
-      const a = mat[i * 4 + 0].toPrecision(3);
-      const b = mat[i * 4 + 1].toPrecision(3);
-      const c = mat[i * 4 + 2].toPrecision(3);
-      const d = mat[i * 4 + 3].toPrecision(3);
-      str += `[${a}, ${b}, ${c}, ${d}]<br>`;
+    for (let i = 0; i < 3; i++) {
+      const a = format(mat[i * 4 + 0]);
+      const b = format(mat[i * 4 + 1]);
+      const c = format(mat[i * 4 + 2]);
+      str += `[${a}, ${b}, ${c}]<br>`;
     }
-    data.innerHTML = `Matrix:<br>${str}`;
+
+    let mat2 = new Float32Array(16);
+    sensor.populateMatrix2(mat2);
+
+    let str2 = "";
+    for (let i = 0; i < 3; i++) {
+      const a = format(mat2[i * 4 + 0]);
+      const b = format(mat2[i * 4 + 1]);
+      const c = format(mat2[i * 4 + 2]);
+      str2 += `[${a}, ${b}, ${c}]<br>`;
+    }
+
+    data.innerHTML = `E Matrix:<br>${str}<br> Q Matrix:<br>${str2}`;
 
     const quat = document.querySelector('#quat');
 
     let q = sensor.quaternion;
-    const a = q[0].toPrecision(3);
-    const b = q[1].toPrecision(3);
-    const c = q[2].toPrecision(3);
-    const d = q[3].toPrecision(3); 
-    quat.innerHTML = `Quaternion: [${a}, ${b}, ${c}, ${d}]`;
+    const a = format(q[0]);
+    const b = format(q[1]);
+    const c = format(q[2]);
+    const d = format(q[3]);
+
+    let q2 = sensor.quaternion2;
+    const a2 = q2[0].toFixed(3);
+    const b2 = q2[1].toFixed(3);
+    const c2 = q2[2].toFixed(3);
+    const d2 = q2[3].toFixed(3);
+
+    quat.innerHTML = `
+      Quaternion: [${a}, ${b}, ${c}, ${d}]
+      Mat Quaternion: [${a2}, ${b2}, ${c2}, ${d2}]`;
 
     const timestamp = document.querySelector('#timestamp');
     timestamp.innerHTML = `Timestamp: ${sensor.timestamp}`;
@@ -81,7 +105,7 @@ sensor.onreading = (event) => {
   console.log(sensor instanceof EventTarget);
   console.log(sensor);
   sensor.start();
-*/
+
 </script>
 
 <body>
