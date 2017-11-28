@@ -37,7 +37,3 @@ import {
 ```
 - That's it. See [`index.html`](https://kenchris.github.io/sensor-polyfills/) ([source](https://github.com/kenchris/sensor-polyfills/blob/master/index.html)) for an example.
 
-License
-===
-
-TBD
