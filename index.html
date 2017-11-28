@@ -1,4 +1,7 @@
-
+<!DOCTYPE html>
+<html>
+<head>
+<title>Generic Sensor API polyfills example</title>
 <script type="module">
 import {
   Sensor,
@@ -8,7 +11,7 @@ import {
   Accelerometer,
   LinearAccelerationSensor,
   GravitySensor
-} from './motion-sensors.js';
+} from './src/motion-sensors.js';
 
 let log = console.log;
 console.log = (message, ...rest) => {
@@ -121,3 +124,4 @@ sensor.onreading = (event) => {
   <div id="timestamp"></div>
   <div id="console"></div>
 </body>
+</html>
