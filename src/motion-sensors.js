@@ -1,6 +1,18 @@
 // @ts-check
 const slot = window["__sensor__"] = Symbol("__sensor__");
 
+let orientation = {};
+
+if (screen.orientation) {
+  orientation = screen.orientation;
+} else if (screen.msOrientation) {
+  orientation = screen.msOrientation;
+} else {
+  Object.defineProperty(orientation, "angle", {
+    get: () => { return (window.orientation || 0)  * Math.PI / 180; }
+  });
+}
+
 function defineProperties(target, descriptions) {
   for (const property in descriptions) {
     Object.defineProperty(target, property, {
@@ -175,28 +187,26 @@ function toQuaternionFromEuler(alpha, beta, gamma) {
 function toMat4FromQuat(mat, q) {
   const typed = mat instanceof Float32Array || mat instanceof Float64Array;
 
-  const m11 = 1 - 2 * (q[1] ** 2 + q[2] ** 2);
-  const m12 = 2 * (q[0] * q[1] - q[2] * q[3]);
-  const m13 = 2 * (q[0] * q[2] + q[1] * q[3]);
-
-  const m21 = 2 * (q[0] * q[1] + q[2] * q[3]);
-  const m22 = 1 - 2 * (q[0] ** 2 + q[2] ** 2);
-  const m23 = 2 * (q[1] * q[2] - q[0] * q[3]);
-
-  const m31 = 2 * (q[0] * q[2] - q[1] * q[3]);
-  const m32 = 2 * (q[1] * q[2] + q[0] * q[3]);
-  const m33 = 1 - 2 * (q[0] ** 2 + q[1] ** 2);
-
   if (typed && mat.length >= 16) {
-    mat.set([m11, m12, m13, 0], 0);
-    mat.set([m21, m22, m23, 0], 4);
-    mat.set([m31, m32, m33, 0], 8);
-    mat.set([0, 0, 0, 1], 12);
-  } else if (mat instanceof DOMMatrix) {
-    mat.m11 = m11; mat.m12 = m12; mat.m13 = m13; mat.m14 = 0;
-    mat.m21 = m21; mat.m22 = m22; mat.m23 = m23; mat.m24 = 0;
-    mat.m31 = m31; mat.m32 = m32; mat.m33 = m33; mat.m34 = 0;
-    mat.m41 = 0; mat.m42 = 0; mat.m43 = 0; mat.m44 = 1;
+    mat[0] = 1 - 2 * (q[1] ** 2 + q[2] ** 2);
+    mat[1] = 2 * (q[0] * q[1] - q[2] * q[3]);
+    mat[2] = 2 * (q[0] * q[2] + q[1] * q[3]);
+    mat[3] = 0;
+
+    mat[4] = 2 * (q[0] * q[1] + q[2] * q[3]);
+    mat[5] = 1 - 2 * (q[0] ** 2 + q[2] ** 2);
+    mat[6] = 2 * (q[1] * q[2] - q[0] * q[3]);
+    mat[7] = 0;
+
+    mat[8] = 2 * (q[0] * q[2] - q[1] * q[3]);
+    mat[9] = 2 * (q[1] * q[2] + q[0] * q[3]);
+    mat[10] = 1 - 2 * (q[0] ** 2 + q[1] ** 2);
+    mat[11] = 0;
+
+    mat[12] = 0;
+    mat[13] = 0;
+    mat[14] = 0;
+    mat[15] = 1;
   }
 
   return mat;
@@ -219,28 +229,26 @@ function toMat4FromEuler(mat, alpha, beta, gamma) {
 
   const typed = mat instanceof Float32Array || mat instanceof Float64Array;
 
-  const m11 = cZ * cY - sZ * sX * sY;
-  const m12 = - cX * sZ;
-  const m13 = cY * sZ * sX + cZ * sY;
-
-  const m21 = cY * sZ + cZ * sX * sY;
-  const m22 = cZ * cX;
-  const m23 = sZ * sY - cZ * cY * sX;
-
-  const m31 = - cX * sY;
-  const m32 = sX;
-  const m33 = cX * cY;
-
   if (typed && mat.length >= 16) {
-    mat.set([m11, m12, m13, 0], 0);
-    mat.set([m21, m22, m23, 0], 4);
-    mat.set([m31, m32, m33, 0], 8);
-    mat.set([0, 0, 0, 1], 12);
-  } else if (mat instanceof DOMMatrix) {
-    mat.m11 = m11; mat.m12 = m12; mat.m13 = m13; mat.m14 = 0;
-    mat.m21 = m21; mat.m22 = m22; mat.m23 = m23; mat.m24 = 0;
-    mat.m31 = m31; mat.m32 = m32; mat.m33 = m33; mat.m34 = 0;
-    mat.m41 = 0; mat.m42 = 0; mat.m43 = 0; mat.m44 = 1;
+    mat[0] = cZ * cY - sZ * sX * sY;
+    mat[1] = - cX * sZ;
+    mat[2] = cY * sZ * sX + cZ * sY;
+    mat[3] = 0;
+
+    mat[4] = cY * sZ + cZ * sX * sY;
+    mat[5] = cZ * cX;
+    mat[6] = sZ * sY - cZ * cY * sX;
+    mat[7] = 0;
+
+    mat[8] = - cX * sY;
+    mat[9] = sX;
+    mat[10] = cX * cY;
+    mat[11] = 0;
+
+    mat[12] = 0;
+    mat[13] = 0;
+    mat[14] = 0;
+    mat[15] = 1;
   }
 
   return mat;
@@ -265,7 +273,8 @@ class SensorErrorEvent extends Event {
   }
 };
 
-export class RelativeOrientationSensor extends DeviceOrientationMixin(Sensor, "deviceorientation") {
+export const RelativeOrientationSensor = window.RelativeOrientationSensor ||
+class RelativeOrientationSensor extends DeviceOrientationMixin(Sensor, "deviceorientation") {
   constructor(options) {
     super(options);
     this[slot].handleEvent = event => {
@@ -326,7 +335,8 @@ export class RelativeOrientationSensor extends DeviceOrientationMixin(Sensor, "d
   }
 }
 
-export class AbsoluteOrientationSensor extends DeviceOrientationMixin(Sensor, "deviceorientationabsolute") {
+export const AbsoluteOrientationSensor = window.AbsoluteOrientationSensor ||
+class AbsoluteOrientationSensor extends DeviceOrientationMixin(Sensor, "deviceorientationabsolute") {
   constructor(options) {
     super(options);
     this[slot].handleEvent = event => {
@@ -367,7 +377,8 @@ export class AbsoluteOrientationSensor extends DeviceOrientationMixin(Sensor, "d
   }
 }
 
-export class Gyroscope extends DeviceOrientationMixin(Sensor, "devicemotion") {
+export const Gyroscope = window.Gyroscope ||
+class Gyroscope extends DeviceOrientationMixin(Sensor, "devicemotion") {
   constructor(options) {
     super(options);
     this[slot].handleEvent = event => {
@@ -400,7 +411,8 @@ export class Gyroscope extends DeviceOrientationMixin(Sensor, "devicemotion") {
   }
 }
 
-export class Accelerometer extends DeviceOrientationMixin(Sensor, "devicemotion") {
+export const Accelerometer = window.Accelerometer ||
+class Accelerometer extends DeviceOrientationMixin(Sensor, "devicemotion") {
   constructor(options) {
     super(options);
     this[slot].handleEvent = event => {
@@ -433,7 +445,8 @@ export class Accelerometer extends DeviceOrientationMixin(Sensor, "devicemotion"
   }
 }
 
-export class LinearAccelerationSensor extends DeviceOrientationMixin(Sensor, "devicemotion") {
+export const LinearAccelerationSensor = window.LinearAccelerationSensor ||
+class LinearAccelerationSensor extends DeviceOrientationMixin(Sensor, "devicemotion") {
   constructor(options) {
     super(options);
     this[slot].handleEvent = event => {
@@ -466,7 +479,8 @@ export class LinearAccelerationSensor extends DeviceOrientationMixin(Sensor, "de
   }
 }
 
-export class GravitySensor extends DeviceOrientationMixin(Sensor, "devicemotion") {
+export const GravitySensor = window.GravitySensor ||
+ class GravitySensor extends DeviceOrientationMixin(Sensor, "devicemotion") {
   constructor(options) {
     super(options);
     this[slot].handleEvent = event => {

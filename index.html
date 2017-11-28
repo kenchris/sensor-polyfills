@@ -4,7 +4,6 @@
 <title>Generic Sensor API polyfills example</title>
 <script type="module">
 import {
-  Sensor,
   AbsoluteOrientationSensor,
   RelativeOrientationSensor,
   Gyroscope,
@@ -111,8 +110,6 @@ sensor.onreading = (event) => {
     console.log("activating");
     console.log("activated: " + sensor.activated);
   };
-  console.log(sensor instanceof Sensor);
-  console.log(sensor instanceof EventTarget);
   console.log(sensor);
   sensor.start();
 
