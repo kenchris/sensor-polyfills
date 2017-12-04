@@ -128,16 +128,23 @@ export class Sensor extends EventTarget {
   stop() { }
 }
 
-const DeviceOrientationMixin = (superclass, eventName) => class extends superclass {
+const DeviceOrientationMixin = (superclass, ...eventNames) => class extends superclass {
   constructor(...args) {
     super(args);
+
+    for (const eventName of eventNames) {
+      if (`on{eventName}` in window) {
+        this[slot].eventName = eventName;
+        break;
+      }
+    }
   }
 
   start() {
     super.start();
 
     let activate = new Event("activate");
-    window.addEventListener(eventName, this[slot].handleEvent, false);
+    window.addEventListener(this[slot].eventName, this[slot].handleEvent, false);
     this[slot].activated = true;
     this.dispatchEvent(activate);
   }
@@ -145,7 +152,7 @@ const DeviceOrientationMixin = (superclass, eventName) => class extends supercla
   stop() {
     super.stop();
 
-    window.removeEventListener(eventName, this[slot].handleEvent, false);
+    window.removeEventListener(this[slot].eventName, this[slot].handleEvent, false);
     this[slot].activated = false;
   }
 };
@@ -336,13 +343,14 @@ class RelativeOrientationSensor extends DeviceOrientationMixin(Sensor, "deviceor
 }
 
 export const AbsoluteOrientationSensor = window.AbsoluteOrientationSensor ||
-class AbsoluteOrientationSensor extends DeviceOrientationMixin(Sensor, "deviceorientationabsolute") {
+class AbsoluteOrientationSensor extends DeviceOrientationMixin(
+  Sensor, "deviceorientationabsolute", "deviceorientation") {
   constructor(options) {
     super(options);
     this[slot].handleEvent = event => {
       // If there is no sensor or we cannot get absolute values,
       // we will get values equal to null.
-      if (!event.absolute || event.alpha === null) {
+      if (!event.absolute || (event.alpha === null || event.webkitCompassHeading === null)) {
         // Spec: If an implementation can never provide absolute
         // orientation information, the event should be fired with
         // the alpha, beta and gamma attributes set to null.
@@ -358,7 +366,7 @@ class AbsoluteOrientationSensor extends DeviceOrientationMixin(Sensor, "deviceor
 
       this[slot].timestamp = performance.now();
 
-      this[slot].alpha = event.alpha;
+      this[slot].alpha = event.alpha ? event.alpha : 360 - event.webkitCompassHeading;
       this[slot].beta = event.beta;
       this[slot].gamma = event.gamma;
       this[slot].quaternion = toQuaternionFromEuler(event.alpha, event.beta, event.gamma);
