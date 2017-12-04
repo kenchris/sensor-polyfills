@@ -347,10 +347,13 @@ class AbsoluteOrientationSensor extends DeviceOrientationMixin(
   Sensor, "deviceorientationabsolute", "deviceorientation") {
   constructor(options) {
     super(options);
+
     this[slot].handleEvent = event => {
-      // If there is no sensor or we cannot get absolute values,
-      // we will get values equal to null.
-      if (!event.absolute || (event.alpha === null && event.webkitCompassHeading === null)) {
+      // If absolute is set, or webkitCompassHeading exists,
+      // absolute values should be available.
+      const isAbsolute = event.absolute === "true" || "webkitCompassHeading" in event;
+      const hasValue = event.alpha !== null || event.webkitCompassHeading !== null;
+      if (!isAbsolute || !hasValue) {
         // Spec: If an implementation can never provide absolute
         // orientation information, the event should be fired with
         // the alpha, beta and gamma attributes set to null.
@@ -364,15 +367,14 @@ class AbsoluteOrientationSensor extends DeviceOrientationMixin(
         return;
       }
 
+      this[slot].hasReading = true;
       this[slot].timestamp = performance.now();
-
       this[slot].quaternion = toQuaternionFromEuler(
         event.alpha ? event.alpha : 360 - event.webkitCompassHeading,
         event.beta,
         event.gamma
       );
 
-      this[slot].hasReading = true;
       this.dispatchEvent(new Event("reading"));
     }
 
