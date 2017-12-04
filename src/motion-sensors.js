@@ -351,7 +351,7 @@ class AbsoluteOrientationSensor extends DeviceOrientationMixin(
     this[slot].handleEvent = event => {
       // If absolute is set, or webkitCompassHeading exists,
       // absolute values should be available.
-      const isAbsolute = event.absolute === "true" || "webkitCompassHeading" in event;
+      const isAbsolute = event.absolute === true || "webkitCompassHeading" in event;
       const hasValue = event.alpha !== null || event.webkitCompassHeading !== null;
       if (!isAbsolute || !hasValue) {
         // Spec: If an implementation can never provide absolute
