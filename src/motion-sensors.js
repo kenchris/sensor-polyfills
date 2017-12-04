@@ -133,7 +133,7 @@ const DeviceOrientationMixin = (superclass, ...eventNames) => class extends supe
     super(args);
 
     for (const eventName of eventNames) {
-      if (`on{eventName}` in window) {
+      if (`on${eventName}` in window) {
         this[slot].eventName = eventName;
         break;
       }
