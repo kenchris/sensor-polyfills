@@ -21,19 +21,19 @@ How to use
 ===
 
 - Copy  [`src/motion-sensors.js`](https://raw.githubusercontent.com/kenchris/sensor-polyfills/master/src/motion-sensors.js) ([source](https://github.com/kenchris/sensor-polyfills/blob/master/src/motion-sensors.js)) into your project, or install via npm (`$ npm i motion-sensors-polyfill`).
-- Import the motion sensor classes in your HTML (see [`<script type="module">` browser support](https://caniuse.com/#feat=es6-module) or use a [polyfill](https://github.com/ModuleLoader/es-module-loader) to load this polyfill!):
+- Import the motion sensor objects in your HTML (see [`<script type="module">` browser support](https://caniuse.com/#feat=es6-module) or use a [polyfill](https://github.com/ModuleLoader/es-module-loader) to load this polyfill!):
 ```
 <script type="module">
+// Import the objects you need.
 import {
-  Sensor,
-  Accelerometer,
-  LinearAccelerationSensor,
   Gyroscope,
-  GravitySensor,
-  RelativeOrientationSensor,
   AbsoluteOrientationSensor
 } from './src/motion-sensors.js';
+
+// And they're ready for use!
+let gyroscope = new Gyroscope({ frequency: 15 });
+let orientation = new AbsoluteOrientationSensor({ frequency: 60 });
 </script>
 ```
-- That's it. See [`index.html`](https://kenchris.github.io/sensor-polyfills/) ([source](https://github.com/kenchris/sensor-polyfills/blob/master/index.html)) for an example.
+- That's it. See [Orientation phone demo](https://intel.github.io/generic-sensor-demos/orientation-phone/) ([code](https://github.com/intel/generic-sensor-demos/blob/master/orientation-phone/index.html)) for an example.
 
