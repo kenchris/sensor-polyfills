@@ -46,7 +46,7 @@ function format(num) {
   return num.toFixed(3).padStart(6).replace(' ', '&nbsp;');
 }
 
-let sensor = new AbsoluteOrientationSensor();
+let sensor = new RelativeOrientationSensor();
 
 sensor.onerror = err => console.log(err);
 
@@ -65,21 +65,6 @@ sensor.onreading = (event) => {
       str += `[${a}, ${b}, ${c}]<br>`;
     }
 
-    /*
-    let mat2 = new Float32Array(16);
-    sensor.__populateMatrixEuler(mat2);
-
-    let str2 = "";
-    for (let i = 0; i < 3; i++) {
-      const a = format(mat2[i * 4 + 0]);
-      const b = format(mat2[i * 4 + 1]);
-      const c = format(mat2[i * 4 + 2]);
-      str2 += `[${a}, ${b}, ${c}]<br>`;
-    }
-
-    data.innerHTML = `QMatrix:<br>${str}<br> EMatrix:<br>${str2}`;
-    */
-
     const quat = document.querySelector('#quat');
 
     let q = sensor.quaternion;
@@ -88,24 +73,8 @@ sensor.onreading = (event) => {
     const c = format(q[2]);
     const d = format(q[3]);
 
-    /*
-    let q2 = sensor.__quaternionQMatrix;
-    const a2 = format(q2[0]);
-    const b2 = format(q2[1]);
-    const c2 = format(q2[2]);
-    const d2 = format(q2[3]);
-
-    let q3 = sensor.__quaternionEMatrix;
-    const a3 = format(q3[0]);
-    const b3 = format(q3[1]);
-    const c3 = format(q3[2]);
-    const d3 = format(q3[3]);
-    */
-
     quat.innerHTML = `
       <br>PureQuaternion: [x: ${a}, y: ${b}, z: ${c}, w: ${d}]`;
-    //  <br>FromQuadMatrix: [x: ${a2}, y: ${b2}, z: ${c2}, w: ${d2}]
-    //  <br>FromEulerMatrix: [x: ${a3}, y: ${b3}, z: ${c3}, w: ${d3}]`;
 
     const timestamp = document.querySelector('#timestamp');
     timestamp.innerHTML = `Timestamp: ${sensor.timestamp}`;
