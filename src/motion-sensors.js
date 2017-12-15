@@ -9,7 +9,7 @@ if (screen.orientation) {
   orientation = screen.msOrientation;
 } else {
   Object.defineProperty(orientation, "angle", {
-    get: () => { return (window.orientation || 0)  * Math.PI / 180; }
+    get: () => { return (window.orientation || 0) }
   });
 }
 
@@ -20,7 +20,7 @@ function defineProperties(target, descriptions) {
       value: descriptions[property]
     });
   }
-}  
+}
 
 class EventTarget {
   constructor() {
@@ -197,6 +197,31 @@ function rotateQuaternionByAxisAngle(quat, axis, angle) {
   return normalizeQuaternion(multiplyQuaternion(quat, transformQuat));
 }
 
+function rotateMat4ByZ(mat, rad) {
+  let s = Math.sin(rad);
+  let c = Math.cos(rad);
+  let a00 = mat[0];
+  let a01 = mat[1];
+  let a02 = mat[2];
+  let a03 = mat[3];
+  let a10 = mat[4];
+  let a11 = mat[5];
+  let a12 = mat[6];
+  let a13 = mat[7];
+
+  // Perform Z-axis-specific matrix multiplication.
+  mat[0] = a00 * c + a10 * s;
+  mat[1] = a01 * c + a11 * s;
+  mat[2] = a02 * c + a12 * s;
+  mat[3] = a03 * c + a13 * s;
+  mat[4] = a10 * c - a00 * s;
+  mat[5] = a11 * c - a01 * s;
+  mat[6] = a12 * c - a02 * s;
+  mat[7] = a13 * c - a03 * s;
+
+  return mat;
+}
+
 function toMat4FromQuat(mat, q) {
   const typed = mat instanceof Float32Array || mat instanceof Float64Array;
 
@@ -267,6 +292,53 @@ function toMat4FromEuler(mat, alpha, beta, gamma) {
   return mat;
 };
 
+function toEulerFromMat4(mat) {
+  const euler = { alpha: 0, beta: 0, gamma: 0 };
+
+  if (mat[10] > 0) { // cos(beta) > 0
+    euler.alpha = Math.atan2(-mat[1], mat[5]);
+    euler.beta  = Math.asin(mat[9]); // beta (-pi/2, pi/2)
+    euler.gamma = Math.atan2(-mat[8], mat[10]); // gamma (-pi/2, pi/2)
+  }
+  else if (mat[10] < 0) {  // cos(beta) < 0
+    euler.alpha = Math.atan2(mat[1], -mat[5]);
+    euler.beta  = -Math.asin(mat[9]);
+    euler.beta  += (euler.beta >= 0) ? -Math.PI : Math.PI; // beta [-pi,-pi/2) U (pi/2,pi)
+    euler.gamma = Math.atan2(mat[8], -mat[10]); // gamma (-pi/2, pi/2)
+  }
+  else { // mat[10] (m33) == 0
+    if (mat[8] > 0) {  // cos(gamma) == 0, cos(beta) > 0
+      euler.alpha = Math.atan2(-mat[1], mat[5]);
+      euler.beta  = Math.asin(mat[9]); // beta [-pi/2, pi/2]
+      euler.gamma = - (Math.PI / 2); // gamma = -pi/2
+    }
+    else if (mat[8] < 0) { // cos(gamma) == 0, cos(beta) < 0
+      euler.alpha = Math.atan2(mat[1], -mat[5]);
+      euler.beta  = -Math.asin(mat[9]);
+      euler.beta  += (euler.beta >= 0) ? - Math.PI : Math.PI; // beta [-pi,-pi/2) U (pi/2,pi)
+      euler.gamma = - (Math.PI / 2); // gamma = -pi/2
+    }
+    else { // mat[8] (m31) == 0, cos(beta) == 0
+      // Gimbal lock discontinuity.
+      euler.alpha = Math.atan2(mat[4], mat[0]);
+      euler.beta  = (mat[9] > 0) ? (Math.PI / 2) : - (Math.PI / 2); // beta = +-pi/2
+      euler.gamma = 0; // gamma = 0
+    }
+  }
+
+  // alpha is in [-pi, pi], make sure it is in [0, 2*pi).
+  if (euler.alpha < 0) {
+    euler.alpha += 2 * Math.PI; // alpha [0, 2*pi)
+  }
+
+  euler.alpha *= 180 / Math.PI;
+  euler.beta *= 180 / Math.PI;
+  euler.gamma *= 180 / Math.PI;
+
+  return euler;
+};
+
+
 class SensorErrorEvent extends Event {
   constructor(type, errorEventInitDict) {
     super(type, errorEventInitDict);
@@ -322,18 +394,19 @@ class RelativeOrientationSensor extends DeviceOrientationMixin(Sensor, "deviceor
 
     Object.defineProperty(this, "quaternion", {
       get: () => {
+        // Screen adjusted quaternion.
         return !this[slot].quaternion ? null :
           rotateQuaternionByAxisAngle(
             this[slot].quaternion,
             [0, 0, 1],
-            - orientation.angle
+            - orientation.angle * Math.PI / 180
           )
       }
     });
   }
 
   populateMatrix(mat) {
-    toMat4FromQuat(mat, this[slot].quaternion);
+    toMat4FromQuat(mat, this.quaternion);
   }
 }
 
@@ -347,7 +420,7 @@ class AbsoluteOrientationSensor extends DeviceOrientationMixin(
       // If absolute is set, or webkitCompassHeading exists,
       // absolute values should be available.
       const isAbsolute = event.absolute === true || "webkitCompassHeading" in event;
-      const hasValue = event.alpha !== null || event.webkitCompassHeading !== null;
+      const hasValue = event.alpha !== null || event.webkitCompassHeading !== undefined;
       if (!isAbsolute || !hasValue) {
         // Spec: If an implementation can never provide absolute
         // orientation information, the event should be fired with
@@ -364,8 +437,17 @@ class AbsoluteOrientationSensor extends DeviceOrientationMixin(
 
       this[slot].hasReading = true;
       this[slot].timestamp = performance.now();
+
+      const heading = event.webkitCompassHeading != null ? 360 - event.webkitCompassHeading : event.alpha;
+
+      let mat = toMat4FromEuler(new Float32Array(16), heading, 0, 0);
+      // We are rotating back with - orientation.angle to adjust to screen orientation,
+      // As heading is fixed, rotate the other direction here.
+      //mat = rotateMat4ByZ(mat, orientation.angle * Math.PI / 180);
+      const adjustedAlpha = toEulerFromMat4(mat).alpha;
+
       this[slot].quaternion = toQuaternionFromEuler(
-        event.alpha ? event.alpha : 360 - event.webkitCompassHeading,
+        event.alpha,
         event.beta,
         event.gamma
       );
@@ -373,13 +455,21 @@ class AbsoluteOrientationSensor extends DeviceOrientationMixin(
       this.dispatchEvent(new Event("reading"));
     }
 
-    defineReadonlyProperties(this, slot, {
-      quaternion: null
+    Object.defineProperty(this, "quaternion", {
+      get: () => {
+        // Screen adjusted quaternion.
+        return !this[slot].quaternion ? null :
+          rotateQuaternionByAxisAngle(
+            this[slot].quaternion,
+            [0, 0, 1],
+            - orientation.angle * Math.PI / 180
+          )
+      }
     });
   }
 
   populateMatrix(mat) {
-    toMat4FromQuat(mat, this[slot].quaternion);
+    toMat4FromQuat(mat, this.quaternion);
   }
 }
 
