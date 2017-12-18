@@ -14,18 +14,6 @@
       assert_not_equals(sensor[propertyName], null);
     }
   }
-
-  function assert_true(actual, description)
-  {
-    assert(actual === true, "assert_true",
-      `expected true got ${actual}`);
-  }
-
-  function assert_false(actual, description)
-  {
-    assert(actual === false, "assert_false",
-      `expected false got ${actual}`);
-  }
   
   function assert_reading_null(sensor) {
     for (let property in properties[sensor.constructor.name]) {
