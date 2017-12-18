@@ -282,6 +282,7 @@ class RelativeOrientationSensor extends DeviceOrientationMixin(Sensor, "deviceor
 
   stop() {
     super.stop();
+    this[slot].hasReading = false;
     this[slot].timestamp = null;
     this[slot].quaternion = null;
   }
@@ -345,6 +346,7 @@ class AbsoluteOrientationSensor extends DeviceOrientationMixin(
 
   stop() {
     super.stop();
+    this[slot].hasReading = false;
     this[slot].timestamp = null;
     this[slot].quaternion = null;
   }
