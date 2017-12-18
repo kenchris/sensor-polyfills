@@ -43,7 +43,7 @@
     return arr;
   }
   
-  export function runGenericSensorTests(sensorType) {
+  function runGenericSensorTests(sensorType) {
     promise_test(async t => {
       const sensor = new sensorType();
       const sensorWatcher = new EventWatcher(t, sensor, ["reading", "error"]);
