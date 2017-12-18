@@ -2,23 +2,8 @@
 <html>
 <head>
 <title>Generic Sensor API polyfills tests</title>
-<script>
-  let log = console.log;
-  console.log = (message, ...rest) => {
-    const div = document.querySelector('#console');
-    let child = document.createElement('div');
-    if (typeof(message) === 'object') {
-      child.innerText = `${message.constructor.name}{${Object.getOwnPropertyNames(message)}}`;
-    }
-    else
-      child.innerText = message;
-    div.appendChild(child);
-
-    log.call(console, message, ...rest);
-  }
-</script>
-
 <script src="tests/testharness.js"></script>
+<script src="tests/testharnessreport.js"></script>
 <script type="module">
 import { runGenericSensorTests } from './tests/generic-sensor-tests.js';
 import {
