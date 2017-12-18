@@ -2,6 +2,43 @@
 <html>
 <head>
 <title>Generic Sensor API polyfills example</title>
+<script>
+  let log = console.log;
+  console.log = (message, ...rest) => {
+    const div = document.querySelector('#console');
+    let child = document.createElement('div');
+    if (typeof(message) === 'object') {
+      child.innerText = `${message.constructor.name}{${Object.getOwnPropertyNames(message)}}`;
+    }
+    else
+      child.innerText = message;
+    div.appendChild(child);
+
+    log.call(console, message, ...rest);
+  }
+</script>
+
+<script src="tests/testharness.js"></script>
+<script type="module">
+import { runGenericSensorTests } from './tests/generic-sensor-tests.js';
+import {
+  AbsoluteOrientationSensor,
+  RelativeOrientationSensor,
+  Gyroscope,
+  Accelerometer,
+  LinearAccelerationSensor,
+  GravitySensor
+} from './src/motion-sensors.js';
+
+runGenericSensorTests(RelativeOrientationSensor);
+runGenericSensorTests(AbsoluteOrientationSensor);
+runGenericSensorTests(Accelerometer);
+runGenericSensorTests(LinearAccelerationSensor);
+runGenericSensorTests(GravitySensor);
+runGenericSensorTests(Gyroscope);
+</script>
+
+
 <script type="module">
 import {
   AbsoluteOrientationSensor,
@@ -12,19 +49,6 @@ import {
   GravitySensor
 } from './src/motion-sensors.js';
 
-let log = console.log;
-console.log = (message, ...rest) => {
-  const div = document.querySelector('#console');
-  let child = document.createElement('div');
-  if (typeof(message) === 'object') {
-    child.innerText = `${message.constructor.name}{${Object.getOwnPropertyNames(message)}}`;
-  }
-  else
-    child.innerText = message;
-  div.appendChild(child);
-
-  log.call(console, message, ...rest);
-}
 
 /*
 let gyro = new Gyroscope({ frequency: 50 });
