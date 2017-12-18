@@ -280,6 +280,12 @@ class RelativeOrientationSensor extends DeviceOrientationMixin(Sensor, "deviceor
     });
   }
 
+  stop() {
+    super.stop();
+    this[slot].timestamp = null;
+    this[slot].quaternion = null;
+  }
+
   populateMatrix(mat) {
     toMat4FromQuat(mat, this.quaternion);
   }
@@ -335,6 +341,12 @@ class AbsoluteOrientationSensor extends DeviceOrientationMixin(
           )
       }
     });
+  }
+
+  stop() {
+    super.stop();
+    this[slot].timestamp = null;
+    this[slot].quaternion = null;
   }
 
   populateMatrix(mat) {
