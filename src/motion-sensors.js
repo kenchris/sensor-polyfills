@@ -348,7 +348,7 @@ class Gyroscope extends DeviceOrientationMixin(Sensor, "devicemotion") {
     super(options);
     this[slot].handleEvent = event => {
       // If there is no sensor we will get values equal to null.
-      if (false && event.rotationRate.alpha === null) {
+      if (event.rotationRate.alpha === null) {
         let error = new SensorErrorEvent("error", {
           error: new DOMException("Could not connect to a sensor")
         });
