@@ -18,27 +18,6 @@
   }
 </script>
 
-<script src="tests/testharness.js"></script>
-<script type="module">
-import { runGenericSensorTests } from './tests/generic-sensor-tests.js';
-import {
-  AbsoluteOrientationSensor,
-  RelativeOrientationSensor,
-  Gyroscope,
-  Accelerometer,
-  LinearAccelerationSensor,
-  GravitySensor
-} from './src/motion-sensors.js';
-
-runGenericSensorTests(RelativeOrientationSensor);
-runGenericSensorTests(AbsoluteOrientationSensor);
-runGenericSensorTests(Accelerometer);
-runGenericSensorTests(LinearAccelerationSensor);
-runGenericSensorTests(GravitySensor);
-runGenericSensorTests(Gyroscope);
-</script>
-
-
 <script type="module">
 import {
   AbsoluteOrientationSensor,
