@@ -89,7 +89,7 @@ export class Sensor extends EventTarget {
     defineReadonlyProperties(this, slot, {
       activated: false,
       hasReading: false,
-      timestamp: 0
+      timestamp: null
     })
 
     this[slot].setState = (value) => {
@@ -106,7 +106,7 @@ export class Sensor extends EventTarget {
         case SensorState.IDLE: {
           this[slot].activated = false;
           this[slot].hasReading = false;
-          this[slot].timestamp = 0;
+          this[slot].timestamp = null;
           break;
         }
         case SensorState.ACTIVATING: {
