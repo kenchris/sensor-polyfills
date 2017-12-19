@@ -117,13 +117,7 @@ const DeviceOrientationMixin = (superclass, ...eventNames) => class extends supe
   start() {
     super.start();
 
-    let activate = new Event("activate");
     window.addEventListener(this[slot].eventName, this[slot].handleEvent, false);
-
-    (async () => {
-      this[slot].activated = true;
-      this.dispatchEvent(activate);
-    })();
   }
 
   stop() {
@@ -241,20 +235,26 @@ class RelativeOrientationSensor extends DeviceOrientationMixin(Sensor, "deviceor
   constructor(options) {
     super(options);
     this[slot].handleEvent = event => {
-      // If there is no sensor we will get values equal to null.
-      if (event.absolute || event.alpha === null) {
-        // Spec: The implementation can still decide to provide
-        // absolute orientation if relative is not available or
-        // the resulting data is more accurate. In either case,
-        // the absolute property must be set accordingly to reflect
-        // the choice.
+      if (!this[slot].activated) {
+        // If there is no sensor we will get values equal to null.
+        if (event.absolute || event.alpha === null) {
+          // Spec: The implementation can still decide to provide
+          // absolute orientation if relative is not available or
+          // the resulting data is more accurate. In either case,
+          // the absolute property must be set accordingly to reflect
+          // the choice.
 
-        let error = new SensorErrorEvent("error", {
-          error: new DOMException("Could not connect to a sensor")
-        });
-        this.dispatchEvent(error);
+          let error = new SensorErrorEvent("error", {
+            error: new DOMException("Could not connect to a sensor")
+          });
+          this.dispatchEvent(error);
 
-        this.stop();
+          this.stop();
+        } else {
+          let activate = new Event("activate");
+          this[slot].activated = true;
+          this.dispatchEvent(activate);
+        }
         return;
       }
 

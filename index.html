@@ -88,6 +88,10 @@ sensor.onreading = (event) => {
   };
   console.log(sensor);
   sensor.start();
+  console.log("start/activated: " + sensor.activated);
+  sensor.stop();
+  console.log("stop/activated: " + sensor.activated);
+
 
 </script>
 
