@@ -119,8 +119,11 @@ const DeviceOrientationMixin = (superclass, ...eventNames) => class extends supe
 
     let activate = new Event("activate");
     window.addEventListener(this[slot].eventName, this[slot].handleEvent, false);
-    this[slot].activated = true;
-    this.dispatchEvent(activate);
+
+    (async () => {
+      this[slot].activated = true;
+      this.dispatchEvent(activate);
+    })();
   }
 
   stop() {
