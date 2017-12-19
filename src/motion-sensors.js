@@ -153,13 +153,13 @@ const DeviceOrientationMixin = (superclass, ...eventNames) => class extends supe
   start() {
     super.start();
     this[slot].setState(SensorState.ACTIVATING);
-    window.addEventListener(this[slot].eventName, this[slot].handleEvent, false);
+    window.addEventListener(this[slot].eventName, this[slot].handleEvent, { capture: true });
   }
 
   stop() {
     super.stop();
     this[slot].setState(SensorState.IDLE);
-    window.removeEventListener(this[slot].eventName, this[slot].handleEvent, false);
+    window.removeEventListener(this[slot].eventName, this[slot].handleEvent, { capture: true });
   }
 };
 
