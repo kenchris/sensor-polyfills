@@ -398,26 +398,26 @@ class Gyroscope extends DeviceOrientationMixin(Sensor, "devicemotion") {
 
       this[slot].timestamp = performance.now();
 
-      this[slot].alpha = event.rotationRate.alpha;
-      this[slot].beta = event.rotationRate.beta;
-      this[slot].gamma = event.rotationRate.gamma;
+      this[slot].x = event.rotationRate.alpha;
+      this[slot].y = event.rotationRate.beta;
+      this[slot].z = event.rotationRate.gamma;
 
       this[slot].hasReading = true;
       this.dispatchEvent(new Event("reading"));
     }
 
     defineReadonlyProperties(this, slot, {
-      alpha: null,
-      beta: null,
-      gamma: null
+      x: null,
+      y: null,
+      z: null
     });
   }
 
   stop() {
     super.stop();
-    this[slot].alpha = null;
-    this[slot].beta = null;
-    this[slot].gamma = null;
+    this[slot].x = null;
+    this[slot].y = null;
+    this[slot].z = null;
   }
 }
 
