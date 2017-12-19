@@ -70,6 +70,13 @@ function defineOnEventListener(target, name) {
   });
 }
 
+const SensorState = {
+  ERROR: 0,
+  IDLE: 1,
+  ACTIVATING: 2,
+  ACTIVE: 3,
+}
+
 export class Sensor extends EventTarget {
   constructor(options) {
     super();
@@ -84,6 +91,35 @@ export class Sensor extends EventTarget {
       hasReading: false,
       timestamp: 0
     })
+
+    this[slot].setState = (value) => {
+      switch(value) {
+        case SensorState.ERROR: {
+          let error = new SensorErrorEvent("error", {
+            error: new DOMException("Could not connect to a sensor")
+          });
+          this.dispatchEvent(error);
+
+          this.stop(); // Moves to IDLE state.
+          break;
+        }
+        case SensorState.IDLE: {
+          this[slot].activated = false;
+          this[slot].hasReading = false;
+          this[slot].timestamp = 0;
+          break;
+        }
+        case SensorState.ACTIVATING: {
+          break;
+        }
+        case SensorState.ACTIVE: {
+          let activate = new Event("activate");
+          this[slot].activated = true;
+          this.dispatchEvent(activate);
+          break;
+        }
+      }
+    };
 
     this[slot].frequency = null;
 
@@ -116,15 +152,14 @@ const DeviceOrientationMixin = (superclass, ...eventNames) => class extends supe
 
   start() {
     super.start();
-
+    this[slot].setState(SensorState.ACTIVATING);
     window.addEventListener(this[slot].eventName, this[slot].handleEvent, false);
   }
 
   stop() {
     super.stop();
-
+    this[slot].setState(SensorState.IDLE);
     window.removeEventListener(this[slot].eventName, this[slot].handleEvent, false);
-    this[slot].activated = false;
   }
 };
 
@@ -235,27 +270,19 @@ class RelativeOrientationSensor extends DeviceOrientationMixin(Sensor, "deviceor
   constructor(options) {
     super(options);
     this[slot].handleEvent = event => {
-      if (!this[slot].activated) {
-        // If there is no sensor we will get values equal to null.
-        if (event.absolute || event.alpha === null) {
-          // Spec: The implementation can still decide to provide
-          // absolute orientation if relative is not available or
-          // the resulting data is more accurate. In either case,
-          // the absolute property must be set accordingly to reflect
-          // the choice.
-
-          let error = new SensorErrorEvent("error", {
-            error: new DOMException("Could not connect to a sensor")
-          });
-          this.dispatchEvent(error);
-
-          this.stop();
-        } else {
-          let activate = new Event("activate");
-          this[slot].activated = true;
-          this.dispatchEvent(activate);
-        }
+      // If there is no sensor we will get values equal to null.
+      if (event.absolute || event.alpha === null) {
+        // Spec: The implementation can still decide to provide
+        // absolute orientation if relative is not available or
+        // the resulting data is more accurate. In either case,
+        // the absolute property must be set accordingly to reflect
+        // the choice.
+        this[slot].setState(SensorState.ERROR);
         return;
+      }
+
+      if (!this[slot].activated) {
+        this[slot].setState(SensorState.ACTIVE);
       }
 
       this[slot].timestamp = performance.now();
@@ -306,18 +333,17 @@ class AbsoluteOrientationSensor extends DeviceOrientationMixin(
       // absolute values should be available.
       const isAbsolute = event.absolute === true || "webkitCompassHeading" in event;
       const hasValue = event.alpha !== null || event.webkitCompassHeading !== undefined;
+
       if (!isAbsolute || !hasValue) {
         // Spec: If an implementation can never provide absolute
         // orientation information, the event should be fired with
         // the alpha, beta and gamma attributes set to null.
-
-        let error = new SensorErrorEvent("error", {
-          error: new DOMException("Could not connect to a sensor")
-        });
-        this.dispatchEvent(error);
-
-        this.stop();
+        this[slot].setState(SensorState.ERROR);
         return;
+      }
+
+      if (!this[slot].activated) {
+        this[slot].setState(SensorState.ACTIVE);
       }
 
       this[slot].hasReading = true;
@@ -366,13 +392,12 @@ class Gyroscope extends DeviceOrientationMixin(Sensor, "devicemotion") {
     this[slot].handleEvent = event => {
       // If there is no sensor we will get values equal to null.
       if (event.rotationRate.alpha === null) {
-        let error = new SensorErrorEvent("error", {
-          error: new DOMException("Could not connect to a sensor")
-        });
-        this.dispatchEvent(error);
-
-        this.stop();
+        this[slot].setState(SensorState.ERROR);
         return;
+      }
+
+      if (!this[slot].activated) {
+        this[slot].setState(SensorState.ACTIVE);
       }
 
       this[slot].timestamp = performance.now();
@@ -400,13 +425,12 @@ class Accelerometer extends DeviceOrientationMixin(Sensor, "devicemotion") {
     this[slot].handleEvent = event => {
       // If there is no sensor we will get values equal to null.
       if (event.accelerationIncludingGravity.x === null) {
-        let error = new SensorErrorEvent("error", {
-          error: new DOMException("Could not connect to a sensor")
-        });
-        this.dispatchEvent(error);
-
-        this.stop();
+        this[slot].setState(SensorState.ERROR);
         return;
+      }
+
+      if (!this[slot].activated) {
+        this[slot].setState(SensorState.ACTIVE);
       }
 
       this[slot].timestamp = performance.now();
@@ -434,13 +458,12 @@ class LinearAccelerationSensor extends DeviceOrientationMixin(Sensor, "devicemot
     this[slot].handleEvent = event => {
       // If there is no sensor we will get values equal to null.
       if (event.acceleration.x === null) {
-        let error = new SensorErrorEvent("error", {
-          error: new DOMException("Could not connect to a sensor")
-        });
-        this.dispatchEvent(error);
-
-        this.stop();
+        this[slot].setState(SensorState.ERROR);
         return;
+      }
+
+      if (!this[slot].activated) {
+        this[slot].setState(SensorState.ACTIVE);
       }
 
       this[slot].timestamp = performance.now();
@@ -468,13 +491,12 @@ export const GravitySensor = window.GravitySensor ||
     this[slot].handleEvent = event => {
       // If there is no sensor we will get values equal to null.
       if (event.acceleration.x === null || event.accelerationIncludingGravity.x === null) {
-        let error = new SensorErrorEvent("error", {
-          error: new DOMException("Could not connect to a sensor")
-        });
-        this.dispatchEvent(error);
-
-        this.stop();
+        this[slot].setState(SensorState.ERROR);
         return;
+      }
+
+      if (!this[slot].activated) {
+        this[slot].setState(SensorState.ACTIVE);
       }
 
       this[slot].timestamp = performance.now();
