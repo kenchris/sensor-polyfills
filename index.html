@@ -28,8 +28,6 @@ import {
   GravitySensor
 } from './src/motion-sensors.js';
 
-
-/*
 let gyro = new Gyroscope({ frequency: 50 });
 
 gyro.onerror = err => console.log(err);
@@ -43,7 +41,6 @@ gyro.onreading = (event) => {
   data.innerHTML = `[${sensor.alpha}, ${sensor.beta}, ${sensor.gamma}]`;
 }
 gyro.start();
-*/
 
 function format(num) {
   return num.toFixed(3).padStart(6).replace(' ', '&nbsp;');
@@ -86,11 +83,11 @@ sensor.onreading = (event) => {
     console.log("activating");
     console.log("activated: " + sensor.activated);
   };
-  console.log(sensor);
-  sensor.start();
-  console.log("start/activated: " + sensor.activated);
-  sensor.stop();
-  console.log("stop/activated: " + sensor.activated);
+  //console.log(sensor);
+  //sensor.start();
+  //console.log("start/activated: " + sensor.activated);
+  //sensor.stop();
+  //console.log("stop/activated: " + sensor.activated);
 
 
 </script>
