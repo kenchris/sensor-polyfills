@@ -312,8 +312,6 @@ class RelativeOrientationSensor extends DeviceOrientationMixin(Sensor, "deviceor
 
   stop() {
     super.stop();
-    this[slot].hasReading = false;
-    this[slot].timestamp = null;
     this[slot].quaternion = null;
   }
 
@@ -375,8 +373,6 @@ class AbsoluteOrientationSensor extends DeviceOrientationMixin(
 
   stop() {
     super.stop();
-    this[slot].hasReading = false;
-    this[slot].timestamp = null;
     this[slot].quaternion = null;
   }
 
@@ -416,6 +412,13 @@ class Gyroscope extends DeviceOrientationMixin(Sensor, "devicemotion") {
       gamma: null
     });
   }
+
+  stop() {
+    super.stop();
+    this[slot].alpha = null;
+    this[slot].beta = null;
+    this[slot].gamma = null;
+  }
 }
 
 export const Accelerometer = window.Accelerometer ||
@@ -448,6 +451,13 @@ class Accelerometer extends DeviceOrientationMixin(Sensor, "devicemotion") {
       y: null,
       z: null
     });
+  }
+
+  stop() {
+    super.stop();
+    this[slot].x = null;
+    this[slot].y = null;
+    this[slot].z = null;
   }
 }
 
@@ -482,6 +492,13 @@ class LinearAccelerationSensor extends DeviceOrientationMixin(Sensor, "devicemot
       z: null
     });
   }
+
+  stop() {
+    super.stop();
+    this[slot].x = null;
+    this[slot].y = null;
+    this[slot].z = null;
+  }
 }
 
 export const GravitySensor = window.GravitySensor ||
@@ -514,5 +531,12 @@ export const GravitySensor = window.GravitySensor ||
       y: null,
       z: null
     });
+  }
+
+  stop() {
+    super.stop();
+    this[slot].x = null;
+    this[slot].y = null;
+    this[slot].z = null;
   }
 }
