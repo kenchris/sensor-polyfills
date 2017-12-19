@@ -26,7 +26,12 @@
     const arr = new Array();
     for (let property in properties[sensor.constructor.name]) {
       let propertyName = properties[sensor.constructor.name][property];
-      arr[property] = sensor[propertyName];
+      let value = sensor[propertyName];
+      // Quaternions are arrays, compare as strings.
+      if (Array.isArray(value)) {
+        value = value.toString();
+      }
+      arr[property] = value;
     }
     return arr;
   }
