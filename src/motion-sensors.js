@@ -444,9 +444,9 @@ class Accelerometer extends DeviceOrientationMixin(Sensor, "devicemotion") {
     }
 
     defineReadonlyProperties(this, slot, {
-      alpha: null,
-      beta: null,
-      gamma: null
+      x: null,
+      y: null,
+      z: null
     });
   }
 }
@@ -477,9 +477,9 @@ class LinearAccelerationSensor extends DeviceOrientationMixin(Sensor, "devicemot
     }
 
     defineReadonlyProperties(this, slot, {
-      alpha: null,
-      beta: null,
-      gamma: null
+      x: null,
+      y: null,
+      z: null
     });
   }
 }
@@ -510,9 +510,9 @@ export const GravitySensor = window.GravitySensor ||
     }
 
     defineReadonlyProperties(this, slot, {
-      alpha: null,
-      beta: null,
-      gamma: null
+      x: null,
+      y: null,
+      z: null
     });
   }
 }

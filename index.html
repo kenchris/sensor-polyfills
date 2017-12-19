@@ -28,19 +28,19 @@ import {
   GravitySensor
 } from './src/motion-sensors.js';
 
-let gyro = new Gyroscope({ frequency: 50 });
+let accel = new Accelerometer({ frequency: 50 });
 
-gyro.onerror = err => console.log(err);
-gyro.onreading = (event) => {
+accel.onerror = err => console.log(err);
+accel.onreading = (event) => {
   const sensor = event.target;
 
   const timestamp = document.querySelector('#timestamp');
   timestamp.innerHTML = `Timestamp: ${sensor.timestamp}`;
 
   const data = document.querySelector('#data');
-  data.innerHTML = `[${sensor.alpha}, ${sensor.beta}, ${sensor.gamma}]`;
+  data.innerHTML = `[${sensor.x}, ${sensor.y}, ${sensor.z}]`;
 }
-gyro.start();
+accel.start();
 
 function format(num) {
   return num.toFixed(3).padStart(6).replace(' ', '&nbsp;');
