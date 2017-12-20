@@ -35,7 +35,7 @@ let gyroscope = new Gyroscope({ frequency: 15 });
 let orientation = new AbsoluteOrientationSensor({ frequency: 60 });
 </script>
 ```
-- That's it. See [Orientation phone demo](https://intel.github.io/generic-sensor-demos/orientation-phone/) ([code](https://github.com/intel/generic-sensor-demos/blob/master/orientation-phone/index.html)) for an example.
+- That's it. See [AbsoluteOrientationSensor demo](https://intel.github.io/generic-sensor-demos/orientation-phone/) and [RelativeOrientationSensor demo](https://intel.github.io/generic-sensor-demos/orientation-phone/?relative=1) ([code](https://github.com/intel/generic-sensor-demos/blob/master/orientation-phone/index.html)) for examples.
 
 Test suite
 ===
