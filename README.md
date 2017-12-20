@@ -17,7 +17,7 @@ In particular, this polyfill will allow the users of modern browsers to get a fe
 - [`RelativeOrientationSensor`](https://w3c.github.io/orientation-sensor/#relativeorientationsensor-interface)
 - [`AbsoluteOrientationSensor`](https://w3c.github.io/orientation-sensor/#absoluteorientationsensor-interface)
 
-How to use
+How to use the polyfill
 ===
 
 - Copy  [`src/motion-sensors.js`](https://raw.githubusercontent.com/kenchris/sensor-polyfills/master/src/motion-sensors.js) ([source](https://github.com/kenchris/sensor-polyfills/blob/master/src/motion-sensors.js)) into your project, or install via npm (`$ npm i motion-sensors-polyfill`).
@@ -36,6 +36,41 @@ let orientation = new AbsoluteOrientationSensor({ frequency: 60 });
 </script>
 ```
 - That's it. See [AbsoluteOrientationSensor demo](https://intel.github.io/generic-sensor-demos/orientation-phone/) and [RelativeOrientationSensor demo](https://intel.github.io/generic-sensor-demos/orientation-phone/?relative=1) ([code](https://github.com/intel/generic-sensor-demos/blob/master/orientation-phone/index.html)) for examples.
+
+How to enable the native implementation in Chrome
+===
+
+There are two ways: *Origin Trial* and *Enable via `chrome://flags`*.
+
+## Origin Trial
+
+
+Generic Sensor APIs are currently available as an [Origin Trial](https://bit.ly/OriginTrials) in Chrome 63+.
+
+To enable native Generic Sensor API implementation for all Chrome users on your site:
+
+1. Go to https://bit.ly/OriginTrialsSignup to get a token.
+2. Add the token to your web page as follows (replace `...` with your token):
+```
+<!-- Origin Trial Token, feature = Generic Sensors, origin = https://example.org, expires ="2018-01-18" -->
+<meta http-equiv="origin-trial" data-feature="Generic Sensors" data-expires="2018-01-18" content="...">
+```
+3. Optional: add `motion-sensors.js` polyfill to cater for non-Chrome users (see [How to use the polyfill](#how-to-use-the-polyfill)).
+
+## Enable via `chrome://flags`
+
+The native implementation is behind the following feature flags in Chrome 63+:
+
+Generic Sensor (`chrome://flags/#enable-generic-sensor`):
+- `Accelerometer`
+- `Gyroscope`
+- `LinearAccelerationSensor`
+- `AbsoluteOrientationSensor`
+- `RelativeOrientationSensor`
+
+Generic Sensor Extra Classes (`chrome://flags/#enable-generic-sensor-extra-classes`):
+- `AmbientLightSensor`
+- `Magnetometer`
 
 Test suite
 ===
