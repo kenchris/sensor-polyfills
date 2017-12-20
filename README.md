@@ -37,3 +37,13 @@ let orientation = new AbsoluteOrientationSensor({ frequency: 60 });
 ```
 - That's it. See [Orientation phone demo](https://intel.github.io/generic-sensor-demos/orientation-phone/) ([code](https://github.com/intel/generic-sensor-demos/blob/master/orientation-phone/index.html)) for an example.
 
+Test suite
+===
+
+Run [web-platform-tests](https://github.com/w3c/web-platform-tests/) with this polyfill enabled [here](https://kenchris.github.io/sensor-polyfills/run-tests.html).
+
+
+Known issues
+===
+
+- `GravitySensor` and `LinearAccelerationSensor` polyfills do not work on Android with Pixel 2, since [`DeviceMotionEvent`](http://w3c.github.io/deviceorientation/spec-source-orientation.html#devicemotion_event)`.acceleration` returns only null values, see [Chromium bug 796518](https://crbug.com/796518).
