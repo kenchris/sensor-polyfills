@@ -5,7 +5,7 @@ W3C Generic Sensor API polyfills
 
 This is a polyfill for [Generic Sensor](https://w3c.github.io/sensors/)-based [motions sensors](https://w3c.github.io/motion-sensors/) to make migration from the old [DeviceOrientationEvent](https://w3c.github.io/deviceorientation/spec-source-orientation.html#deviceorientation)/[DeviceMotionEvent](https://w3c.github.io/deviceorientation/spec-source-orientation.html#devicemotion) to the new APIs a smoother experience.
 
-In particular, this polyfill will allow the users of modern browsers to get a feel of the new API shape before it ships ([Chrome 63 has a native implementation](https://developers.google.com/web/updates/2017/09/sensors-for-the-web)).
+In particular, this polyfill will allow the users of modern browsers to get a feel of the new API shape before it ships ([Chrome 63 has a native implementation](#how-to-enable-the-native-implementation-in-chrome)).
 
 `src/motion-sensors.js` implements the following interfaces:
 
@@ -83,3 +83,8 @@ Known issues
 
 - `GravitySensor` and `LinearAccelerationSensor` polyfills do not work on Android with Pixel 2, since [`DeviceMotionEvent`](http://w3c.github.io/deviceorientation/spec-source-orientation.html#devicemotion_event)`.acceleration` returns only null values, see [Chromium bug 796518](https://crbug.com/796518).
 - `AbsoluteOrientationSensor` on iOS uses non-standard [`webkitCompassHeading`](https://developer.apple.com/documentation/webkitjs/deviceorientationevent/1804777-webkitcompassheading) that reports wrong readings if the device is held in its [`portrait-secondary`](https://w3c.github.io/screen-orientation/#dom-orientationtype-portrait-secondary) orientation. Specifically, the `webkitCompassHeading` flips by 180 degrees when tilted only slightly.
+
+Learn more
+===
+
+- [Sensors For The Web article on Google's Web Fundaments](https://developers.google.com/web/updates/2017/09/sensors-for-the-web) - a web developer-oriented article explaining how to use the Generic Sensor-based APIs.
