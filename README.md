@@ -35,7 +35,7 @@ let gyroscope = new Gyroscope({ frequency: 15 });
 let orientation = new AbsoluteOrientationSensor({ frequency: 60 });
 </script>
 ```
-- That's it. See [Orientation phone demo](https://intel.github.io/generic-sensor-demos/orientation-phone/) ([code](https://github.com/intel/generic-sensor-demos/blob/master/orientation-phone/index.html)) for an example.
+- That's it. See [AbsoluteOrientationSensor demo](https://intel.github.io/generic-sensor-demos/orientation-phone/) and [RelativeOrientationSensor demo](https://intel.github.io/generic-sensor-demos/orientation-phone/?relative=1) ([code](https://github.com/intel/generic-sensor-demos/blob/master/orientation-phone/index.html)) for examples.
 
 Test suite
 ===
@@ -47,3 +47,4 @@ Known issues
 ===
 
 - `GravitySensor` and `LinearAccelerationSensor` polyfills do not work on Android with Pixel 2, since [`DeviceMotionEvent`](http://w3c.github.io/deviceorientation/spec-source-orientation.html#devicemotion_event)`.acceleration` returns only null values, see [Chromium bug 796518](https://crbug.com/796518).
+- `AbsoluteOrientationSensor` on iOS uses non-standard [`webkitCompassHeading`](https://developer.apple.com/documentation/webkitjs/deviceorientationevent/1804777-webkitcompassheading) that reports wrong readings if the device is initially held in its normal portrait orientation and is then rotated 180 degrees. Specifically, the `webkitCompassHeading` flips by 180 degrees when tilted only slightly.
