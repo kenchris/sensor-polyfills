@@ -22,12 +22,13 @@ function defineProperties(target, descriptions) {
   }
 }
 
-class EventTarget {
-  constructor() {
+export const EventTargetMixin = (superclass, ...eventNames) => class extends superclass {
+  constructor(...args) {
+    super(args);
     const eventTarget = document.createDocumentFragment();
 
-    this.addEventListener = (...args) => {
-      return eventTarget.addEventListener(...args);
+    this.addEventListener = (type, ...args) => {
+      return eventTarget.addEventListener(type, ...args);
     }
 
     this.removeEventListener = (...args) => {
@@ -35,7 +36,10 @@ class EventTarget {
     }
 
     this.dispatchEvent = (event) => {
-      defineProperties(event, { currentTarget: this, target: this });
+      defineProperties(event, { currentTarget: this });
+      if (!event.target) {
+        defineProperties(event, { target: this });
+      }
 
       const methodName = `on${event.type}`;
       if (typeof this[methodName] == "function") {
@@ -44,12 +48,18 @@ class EventTarget {
 
       const retValue = eventTarget.dispatchEvent(event);
 
+      if (retValue && this.parentNode) {
+        this.parentNode.dispatchEvent(event);
+      }
+
       defineProperties(event, { currentTarget: null, target: null });
 
       return retValue;
     }
   }
-}
+};
+
+export class EventTarget extends EventTargetMixin(Object) {};
 
 function defineReadonlyProperties(target, slot, descriptions) {
   const propertyBag = target[slot] || (target[slot] = new WeakMap);

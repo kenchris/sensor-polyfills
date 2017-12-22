@@ -4,6 +4,7 @@
 <title>Generic Sensor API polyfills tests</title>
 <script src="tests/testharness.js"></script>
 <script src="tests/testharnessreport.js"></script>
+<script src="tests/EventTarget-tests.js"></script>
 <script src="tests/generic-sensor-tests.js"></script>
 <script type="module">
 import {
@@ -12,8 +13,23 @@ import {
   Gyroscope,
   Accelerometer,
   LinearAccelerationSensor,
-  GravitySensor
+  GravitySensor,
+  EventTarget,
+  EventTargetMixin
 } from './src/motion-sensors.js';
+
+runEventTarget_constructible(EventTarget);
+runEventTarget_addEventListener(EventTarget);
+runEventTarget_removeEventListener(EventTarget);
+
+class TestB extends EventTargetMixin(HTMLElement) {
+  constructor(...args) {
+    super(...args);
+    console.log(this);
+  }
+}
+
+runEventTarget_dispatchEvent(TestB);
 
 runGenericSensorTests(RelativeOrientationSensor);
 runGenericSensorTests(AbsoluteOrientationSensor);
@@ -21,7 +37,6 @@ runGenericSensorTests(Gyroscope);
 runGenericSensorTests(Accelerometer);
 runGenericSensorTests(LinearAccelerationSensor);
 runGenericSensorTests(GravitySensor);
-
 </script>
 
 <body>
