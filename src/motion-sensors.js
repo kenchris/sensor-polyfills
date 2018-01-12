@@ -275,10 +275,35 @@ class SensorErrorEvent extends Event {
   }
 };
 
+function worldToScreen(quaternion) {
+  return !quaternion ? null :
+    rotateQuaternionByAxisAngle(
+      quaternion,
+      [0, 0, 1],
+      - orientation.angle * Math.PI / 180
+    );
+}
+
 export const RelativeOrientationSensor = window.RelativeOrientationSensor ||
 class RelativeOrientationSensor extends DeviceOrientationMixin(Sensor, "deviceorientation") {
   constructor(options) {
     super(options);
+
+    if (options && typeof(options.coordinateSystem) === "string") {
+      switch (options.coordinateSystem) {
+        case 'screen':
+          Object.defineProperty(this, "quaternion", {
+            get: () => worldToScreen(this[slot].quaternion)
+          });
+          break;
+        case 'world':
+        default:
+          Object.defineProperty(this, "quaternion", {
+            get: () => this[slot].quaternion
+          });
+      }
+    }
+
     this[slot].handleEvent = event => {
       // If there is no sensor we will get values equal to null.
       if (event.absolute || event.alpha === null) {
@@ -306,18 +331,6 @@ class RelativeOrientationSensor extends DeviceOrientationMixin(Sensor, "deviceor
       this[slot].hasReading = true;
       this.dispatchEvent(new Event("reading"));
     }
-
-    Object.defineProperty(this, "quaternion", {
-      get: () => {
-        // Screen adjusted quaternion.
-        return !this[slot].quaternion ? null :
-          rotateQuaternionByAxisAngle(
-            this[slot].quaternion,
-            [0, 0, 1],
-            - orientation.angle * Math.PI / 180
-          )
-      }
-    });
   }
 
   stop() {
@@ -335,6 +348,21 @@ class AbsoluteOrientationSensor extends DeviceOrientationMixin(
   Sensor, "deviceorientationabsolute", "deviceorientation") {
   constructor(options) {
     super(options);
+
+    if (options && typeof(options.coordinateSystem) === "string") {
+      switch (options.coordinateSystem) {
+        case 'screen':
+          Object.defineProperty(this, "quaternion", {
+            get: () => worldToScreen(this[slot].quaternion)
+          });
+          break;
+        case 'world':
+        default:
+          Object.defineProperty(this, "quaternion", {
+            get: () => this[slot].quaternion
+          });
+      }
+    }
 
     this[slot].handleEvent = event => {
       // If absolute is set, or webkitCompassHeading exists,
@@ -367,18 +395,6 @@ class AbsoluteOrientationSensor extends DeviceOrientationMixin(
 
       this.dispatchEvent(new Event("reading"));
     }
-
-    Object.defineProperty(this, "quaternion", {
-      get: () => {
-        // Screen adjusted quaternion.
-        return !this[slot].quaternion ? null :
-          rotateQuaternionByAxisAngle(
-            this[slot].quaternion,
-            [0, 0, 1],
-            - orientation.angle * Math.PI / 180
-          )
-      }
-    });
   }
 
   stop() {
