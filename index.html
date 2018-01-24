@@ -19,6 +19,12 @@
 </script>
 
 <script type="module">
+import { GeolocationSensor } from './src/geolocation-sensor.js';
+
+window.GeolocationSensor = GeolocationSensor;
+</script>
+
+<script type="module">
 import {
   AbsoluteOrientationSensor,
   RelativeOrientationSensor,

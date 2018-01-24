@@ -137,7 +137,7 @@ export class Sensor extends EventTarget {
 
   start() {
     if (this[slot].state === SensorState.ACTIVATING || this[slot].state === SensorState.ACTIVE) {
-      return false;
+      return;
     }
     this[slot].state = SensorState.ACTIVATING;
     this[slot].activateCallback();
@@ -145,7 +145,7 @@ export class Sensor extends EventTarget {
 
   stop() {
     if (this[slot].state === SensorState.IDLE) {
-      return false;
+      return;
     }
     this[slot].activated = false;
     this[slot].hasReading = false;
