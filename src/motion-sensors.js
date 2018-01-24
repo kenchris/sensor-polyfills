@@ -1,5 +1,6 @@
 // @ts-check
-const slot = window["__sensor__"] = Symbol("__sensor__");
+export const __sensor__ = Symbol("__sensor__");
+const slot = __sensor__;
 
 let orientation = {};
 
@@ -62,7 +63,7 @@ export const EventTargetMixin = (superclass, ...eventNames) => class extends sup
 export class EventTarget extends EventTargetMixin(Object) {};
 
 function defineReadonlyProperties(target, slot, descriptions) {
-  const propertyBag = target[slot] || (target[slot] = new WeakMap);
+  const propertyBag = target[slot];
   for (const property in descriptions) {
     propertyBag[property] = descriptions[property];
     Object.defineProperty(target, property, {
@@ -81,7 +82,6 @@ function defineOnEventListener(target, name) {
 }
 
 const SensorState = {
-  ERROR: 0,
   IDLE: 1,
   ACTIVATING: 2,
   ACTIVE: 3,
@@ -102,34 +102,25 @@ export class Sensor extends EventTarget {
       timestamp: null
     })
 
-    this[slot].setState = (value) => {
-      switch(value) {
-        case SensorState.ERROR: {
-          let error = new SensorErrorEvent("error", {
-            error: new DOMException("Could not connect to a sensor")
-          });
-          this.dispatchEvent(error);
+    this[slot].state = SensorState.IDLE;
 
-          this.stop(); // Moves to IDLE state.
-          break;
-        }
-        case SensorState.IDLE: {
-          this[slot].activated = false;
-          this[slot].hasReading = false;
-          this[slot].timestamp = null;
-          break;
-        }
-        case SensorState.ACTIVATING: {
-          break;
-        }
-        case SensorState.ACTIVE: {
-          let activate = new Event("activate");
-          this[slot].activated = true;
-          this.dispatchEvent(activate);
-          break;
-        }
-      }
-    };
+    this[slot].notifyError = (message, name) => {
+      let error = new SensorErrorEvent("error", {
+        error: new DOMException(message, name)
+      });
+      this.dispatchEvent(error);
+      this.stop();
+    }
+
+    this[slot].notifyActivatedState = () => {
+      let activate = new Event("activate");
+      this[slot].activated = true;
+      this.dispatchEvent(activate);
+      this[slot].state = SensorState.ACTIVE;
+    }
+
+    this[slot].activateCallback = () => {};
+    this[slot].deactivateCallback = () => {};
 
     this[slot].frequency = null;
 
@@ -144,8 +135,25 @@ export class Sensor extends EventTarget {
     }
   }
 
-  start() { }
-  stop() { }
+  start() {
+    if (this[slot].state === SensorState.ACTIVATING || this[slot].state === SensorState.ACTIVE) {
+      return false;
+    }
+    this[slot].state = SensorState.ACTIVATING;
+    this[slot].activateCallback();
+  }
+
+  stop() {
+    if (this[slot].state === SensorState.IDLE) {
+      return false;
+    }
+    this[slot].activated = false;
+    this[slot].hasReading = false;
+    this[slot].timestamp = null;
+    this[slot].deactivateCallback();
+
+    this[slot].state = SensorState.IDLE;
+  }
 }
 
 const DeviceOrientationMixin = (superclass, ...eventNames) => class extends superclass {
@@ -158,18 +166,14 @@ const DeviceOrientationMixin = (superclass, ...eventNames) => class extends supe
         break;
       }
     }
-  }
 
-  start() {
-    super.start();
-    this[slot].setState(SensorState.ACTIVATING);
-    window.addEventListener(this[slot].eventName, this[slot].handleEvent, { capture: true });
-  }
+    this[slot].activateCallback = () => {
+      window.addEventListener(this[slot].eventName, this[slot].handleEvent, { capture: true });
+    }
 
-  stop() {
-    super.stop();
-    this[slot].setState(SensorState.IDLE);
-    window.removeEventListener(this[slot].eventName, this[slot].handleEvent, { capture: true });
+    this[slot].deactivateCallback = () => {
+      window.removeEventListener(this[slot].eventName, this[slot].handleEvent, { capture: true });
+    }
   }
 };
 
@@ -310,12 +314,12 @@ class RelativeOrientationSensor extends DeviceOrientationMixin(Sensor, "deviceor
         // the resulting data is more accurate. In either case,
         // the absolute property must be set accordingly to reflect
         // the choice.
-        this[slot].setState(SensorState.ERROR);
+        this[slot].notifyError("Could not connect to a sensor", "NotReadableError");
         return;
       }
 
       if (!this[slot].activated) {
-        this[slot].setState(SensorState.ACTIVE);
+        this[slot].notifyActivatedState();
       }
 
       this[slot].timestamp = performance.now();
@@ -329,11 +333,10 @@ class RelativeOrientationSensor extends DeviceOrientationMixin(Sensor, "deviceor
       this[slot].hasReading = true;
       this.dispatchEvent(new Event("reading"));
     }
-  }
 
-  stop() {
-    super.stop();
-    this[slot].quaternion = null;
+    this[slot].deactivateCallback = () => {
+      this[slot].quaternion = null;
+    }
   }
 
   populateMatrix(mat) {
@@ -370,12 +373,12 @@ class AbsoluteOrientationSensor extends DeviceOrientationMixin(
         // Spec: If an implementation can never provide absolute
         // orientation information, the event should be fired with
         // the alpha, beta and gamma attributes set to null.
-        this[slot].setState(SensorState.ERROR);
+        this[slot].notifyError("Could not connect to a sensor", "NotReadableError");
         return;
       }
 
       if (!this[slot].activated) {
-        this[slot].setState(SensorState.ACTIVE);
+        this[slot].notifyActivatedState();
       }
 
       this[slot].hasReading = true;
@@ -391,11 +394,10 @@ class AbsoluteOrientationSensor extends DeviceOrientationMixin(
 
       this.dispatchEvent(new Event("reading"));
     }
-  }
 
-  stop() {
-    super.stop();
-    this[slot].quaternion = null;
+    this[slot].deactivateCallback = () => {
+      this[slot].quaternion = null;
+    }
   }
 
   populateMatrix(mat) {
@@ -410,12 +412,12 @@ class Gyroscope extends DeviceOrientationMixin(Sensor, "devicemotion") {
     this[slot].handleEvent = event => {
       // If there is no sensor we will get values equal to null.
       if (event.rotationRate.alpha === null) {
-        this[slot].setState(SensorState.ERROR);
+        this[slot].notifyError("Could not connect to a sensor", "NotReadableError");
         return;
       }
 
       if (!this[slot].activated) {
-        this[slot].setState(SensorState.ACTIVE);
+        this[slot].notifyActivatedState();
       }
 
       this[slot].timestamp = performance.now();
@@ -433,13 +435,12 @@ class Gyroscope extends DeviceOrientationMixin(Sensor, "devicemotion") {
       y: null,
       z: null
     });
-  }
 
-  stop() {
-    super.stop();
-    this[slot].x = null;
-    this[slot].y = null;
-    this[slot].z = null;
+    this[slot].deactivateCallback = () => {
+      this[slot].x = null;
+      this[slot].y = null;
+      this[slot].z = null;
+    }
   }
 }
 
@@ -450,12 +451,12 @@ class Accelerometer extends DeviceOrientationMixin(Sensor, "devicemotion") {
     this[slot].handleEvent = event => {
       // If there is no sensor we will get values equal to null.
       if (event.accelerationIncludingGravity.x === null) {
-        this[slot].setState(SensorState.ERROR);
+        this[slot].notifyError("Could not connect to a sensor", "NotReadableError");
         return;
       }
 
       if (!this[slot].activated) {
-        this[slot].setState(SensorState.ACTIVE);
+        this[slot].notifyActivatedState();
       }
 
       this[slot].timestamp = performance.now();
@@ -473,13 +474,12 @@ class Accelerometer extends DeviceOrientationMixin(Sensor, "devicemotion") {
       y: null,
       z: null
     });
-  }
 
-  stop() {
-    super.stop();
-    this[slot].x = null;
-    this[slot].y = null;
-    this[slot].z = null;
+    this[slot].deactivateCallback = () => {
+      this[slot].x = null;
+      this[slot].y = null;
+      this[slot].z = null;
+    }
   }
 }
 
@@ -490,12 +490,12 @@ class LinearAccelerationSensor extends DeviceOrientationMixin(Sensor, "devicemot
     this[slot].handleEvent = event => {
       // If there is no sensor we will get values equal to null.
       if (event.acceleration.x === null) {
-        this[slot].setState(SensorState.ERROR);
+        this[slot].notifyError("Could not connect to a sensor", "NotReadableError");
         return;
       }
 
       if (!this[slot].activated) {
-        this[slot].setState(SensorState.ACTIVE);
+        this[slot].notifyActivatedState();
       }
 
       this[slot].timestamp = performance.now();
@@ -513,13 +513,12 @@ class LinearAccelerationSensor extends DeviceOrientationMixin(Sensor, "devicemot
       y: null,
       z: null
     });
-  }
 
-  stop() {
-    super.stop();
-    this[slot].x = null;
-    this[slot].y = null;
-    this[slot].z = null;
+    this[slot].deactivateCallback = () => {
+      this[slot].x = null;
+      this[slot].y = null;
+      this[slot].z = null;
+    }
   }
 }
 
@@ -530,12 +529,12 @@ export const GravitySensor = window.GravitySensor ||
     this[slot].handleEvent = event => {
       // If there is no sensor we will get values equal to null.
       if (event.acceleration.x === null || event.accelerationIncludingGravity.x === null) {
-        this[slot].setState(SensorState.ERROR);
+        this[slot].notifyError("Could not connect to a sensor", "NotReadableError");
         return;
       }
 
       if (!this[slot].activated) {
-        this[slot].setState(SensorState.ACTIVE);
+        this[slot].notifyActivatedState();
       }
 
       this[slot].timestamp = performance.now();
@@ -553,12 +552,11 @@ export const GravitySensor = window.GravitySensor ||
       y: null,
       z: null
     });
-  }
 
-  stop() {
-    super.stop();
-    this[slot].x = null;
-    this[slot].y = null;
-    this[slot].z = null;
+    this[slot].deactivateCallback = () => {
+      this[slot].x = null;
+      this[slot].y = null;
+      this[slot].z = null;
+    }
   }
 }
