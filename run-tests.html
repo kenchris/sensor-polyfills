@@ -13,10 +13,13 @@ import {
   Gyroscope,
   Accelerometer,
   LinearAccelerationSensor,
-  GravitySensor,
+  GravitySensor
+} from './src/motion-sensors.js';
+
+import {
   EventTarget,
   EventTargetMixin
-} from './src/motion-sensors.js';
+} from './src/sensor.js';
 
 runEventTarget_constructible(EventTarget);
 runEventTarget_addEventListener(EventTarget);

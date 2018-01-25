@@ -1,4 +1,5 @@
-import { __sensor__, Sensor } from "./motion-sensors.js";
+// @ts-check
+import { __sensor__, Sensor } from "./sensor.js";
 
 const slot = __sensor__;
 
@@ -17,8 +18,10 @@ class GeolocationSensorSingleton {
   }
 
   async obtainPermission() {
-    const state = "prompt"; // Default for geolocation.
+    let state = "prompt"; // Default for geolocation.
+    // @ts-ignore
     if (navigator.permissions) {
+      // @ts-ignore
       const permission = await navigator.permissions.query({ name:"geolocation"});
       state = permission.state;
     }
@@ -43,15 +46,15 @@ class GeolocationSensorSingleton {
   }
 
   calculateAccuracy() {
-    let accuracy = "low";
+    let enableHighAccuracy = false;
 
     for (const sensor of this.sensors) {
       if (sensor[slot].options.accuracy === "high") {
-        accuracy = "high";
+        enableHighAccuracy = true;
         break;
       }
     }
-    return accuracy;
+    return enableHighAccuracy;
   }
 
   async register(sensor) {
@@ -110,7 +113,7 @@ class GeolocationSensorSingleton {
           type = "UnknownError";
       }
       for (const sensor of this.sensors) {
-        sensor[slot].handleError(message, type);
+        sensor[slot].handleError(error.message, type);
       }
     }
 
@@ -134,6 +137,7 @@ class GeolocationSensorSingleton {
   }
 }
 
+// @ts-ignore
 export const GeolocationSensor = window.GeolocationSensor ||
 class GeolocationSensor extends Sensor {
   constructor(options = {}) {

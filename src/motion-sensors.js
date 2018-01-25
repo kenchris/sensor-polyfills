@@ -1,163 +1,26 @@
 // @ts-check
-export const __sensor__ = Symbol("__sensor__");
+import { __sensor__, Sensor, defineReadonlyProperties } from "./sensor.js";
+
 const slot = __sensor__;
 
-let orientation = {};
+let orientation;
 
+// @ts-ignore
 if (screen.orientation) {
+  // @ts-ignore
   orientation = screen.orientation;
 } else if (screen.msOrientation) {
   orientation = screen.msOrientation;
 } else {
+  orientation = {};
   Object.defineProperty(orientation, "angle", {
     get: () => { return (window.orientation || 0) }
   });
 }
 
-function defineProperties(target, descriptions) {
-  for (const property in descriptions) {
-    Object.defineProperty(target, property, {
-      configurable: true,
-      value: descriptions[property]
-    });
-  }
-}
-
-export const EventTargetMixin = (superclass, ...eventNames) => class extends superclass {
-  constructor(...args) {
-    super(args);
-    const eventTarget = document.createDocumentFragment();
-
-    this.addEventListener = (type, ...args) => {
-      return eventTarget.addEventListener(type, ...args);
-    }
-
-    this.removeEventListener = (...args) => {
-      return eventTarget.removeEventListener(...args);
-    }
-
-    this.dispatchEvent = (event) => {
-      defineProperties(event, { currentTarget: this });
-      if (!event.target) {
-        defineProperties(event, { target: this });
-      }
-
-      const methodName = `on${event.type}`;
-      if (typeof this[methodName] == "function") {
-          this[methodName](event);
-      }
-
-      const retValue = eventTarget.dispatchEvent(event);
-
-      if (retValue && this.parentNode) {
-        this.parentNode.dispatchEvent(event);
-      }
-
-      defineProperties(event, { currentTarget: null, target: null });
-
-      return retValue;
-    }
-  }
-};
-
-export class EventTarget extends EventTargetMixin(Object) {};
-
-function defineReadonlyProperties(target, slot, descriptions) {
-  const propertyBag = target[slot];
-  for (const property in descriptions) {
-    propertyBag[property] = descriptions[property];
-    Object.defineProperty(target, property, {
-      get: () => propertyBag[property]
-    });
-  }
-}
-
-function defineOnEventListener(target, name) {
-  Object.defineProperty(target, `on${name}`, {
-    enumerable: true,
-    configurable: false,
-    writable: true,
-    value: null
-  });
-}
-
-const SensorState = {
-  IDLE: 1,
-  ACTIVATING: 2,
-  ACTIVE: 3,
-}
-
-export class Sensor extends EventTarget {
-  constructor(options) {
-    super();
-    this[slot] = new WeakMap;
-
-    defineOnEventListener(this, "reading");
-    defineOnEventListener(this, "activate");
-    defineOnEventListener(this, "error");
-
-    defineReadonlyProperties(this, slot, {
-      activated: false,
-      hasReading: false,
-      timestamp: null
-    })
-
-    this[slot].state = SensorState.IDLE;
-
-    this[slot].notifyError = (message, name) => {
-      let error = new SensorErrorEvent("error", {
-        error: new DOMException(message, name)
-      });
-      this.dispatchEvent(error);
-      this.stop();
-    }
-
-    this[slot].notifyActivatedState = () => {
-      let activate = new Event("activate");
-      this[slot].activated = true;
-      this.dispatchEvent(activate);
-      this[slot].state = SensorState.ACTIVE;
-    }
-
-    this[slot].activateCallback = () => {};
-    this[slot].deactivateCallback = () => {};
-
-    this[slot].frequency = null;
-
-    if (window && window.parent != window.top) {
-      throw new DOMException("Only instantiable in a top-level browsing context", "SecurityError");
-    }
-
-    if (options && typeof(options.frequency) == "number") {
-      if (options.frequency > 60) {
-        this.frequency = options.frequency;
-      }
-    }
-  }
-
-  start() {
-    if (this[slot].state === SensorState.ACTIVATING || this[slot].state === SensorState.ACTIVE) {
-      return;
-    }
-    this[slot].state = SensorState.ACTIVATING;
-    this[slot].activateCallback();
-  }
-
-  stop() {
-    if (this[slot].state === SensorState.IDLE) {
-      return;
-    }
-    this[slot].activated = false;
-    this[slot].hasReading = false;
-    this[slot].timestamp = null;
-    this[slot].deactivateCallback();
-
-    this[slot].state = SensorState.IDLE;
-  }
-}
-
 const DeviceOrientationMixin = (superclass, ...eventNames) => class extends superclass {
   constructor(...args) {
+    // @ts-ignore
     super(args);
 
     for (const eventName of eventNames) {
@@ -259,26 +122,6 @@ function toMat4FromQuat(mat, q) {
   return mat;
 }
 
-
-class SensorErrorEvent extends Event {
-  constructor(type, errorEventInitDict) {
-    super(type, errorEventInitDict);
-
-    if (!errorEventInitDict || !errorEventInitDict.error instanceof DOMException) {
-      throw TypeError(
-        "Failed to construct 'SensorErrorEvent':" +
-        "2nd argument much contain 'error' property"
-      );
-    }
-
-    Object.defineProperty(this, "error", {
-      configurable: false,
-      writable: false,
-      value: errorEventInitDict.error
-    });
-  }
-};
-
 function worldToScreen(quaternion) {
   return !quaternion ? null :
     rotateQuaternionByAxisAngle(
@@ -288,6 +131,7 @@ function worldToScreen(quaternion) {
     );
 }
 
+// @ts-ignore
 export const RelativeOrientationSensor = window.RelativeOrientationSensor ||
 class RelativeOrientationSensor extends DeviceOrientationMixin(Sensor, "deviceorientation") {
   constructor(options = {}) {
@@ -344,6 +188,7 @@ class RelativeOrientationSensor extends DeviceOrientationMixin(Sensor, "deviceor
   }
 }
 
+// @ts-ignore
 export const AbsoluteOrientationSensor = window.AbsoluteOrientationSensor ||
 class AbsoluteOrientationSensor extends DeviceOrientationMixin(
   Sensor, "deviceorientationabsolute", "deviceorientation") {
@@ -405,6 +250,7 @@ class AbsoluteOrientationSensor extends DeviceOrientationMixin(
   }
 }
 
+// @ts-ignore
 export const Gyroscope = window.Gyroscope ||
 class Gyroscope extends DeviceOrientationMixin(Sensor, "devicemotion") {
   constructor(options) {
@@ -444,6 +290,7 @@ class Gyroscope extends DeviceOrientationMixin(Sensor, "devicemotion") {
   }
 }
 
+// @ts-ignore
 export const Accelerometer = window.Accelerometer ||
 class Accelerometer extends DeviceOrientationMixin(Sensor, "devicemotion") {
   constructor(options) {
@@ -483,6 +330,7 @@ class Accelerometer extends DeviceOrientationMixin(Sensor, "devicemotion") {
   }
 }
 
+// @ts-ignore
 export const LinearAccelerationSensor = window.LinearAccelerationSensor ||
 class LinearAccelerationSensor extends DeviceOrientationMixin(Sensor, "devicemotion") {
   constructor(options) {
@@ -522,6 +370,7 @@ class LinearAccelerationSensor extends DeviceOrientationMixin(Sensor, "devicemot
   }
 }
 
+// @ts-ignore
 export const GravitySensor = window.GravitySensor ||
  class GravitySensor extends DeviceOrientationMixin(Sensor, "devicemotion") {
   constructor(options) {
