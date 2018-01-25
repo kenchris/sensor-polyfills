@@ -17,8 +17,11 @@ class GeolocationSensorSingleton {
   }
 
   async obtainPermission() {
-    const permission = await navigator.permissions.query({ name:"geolocation"});
-    const state = permission.state;
+    const state = "prompt"; // Default for geolocation.
+    if (navigator.permissions) {
+      const permission = await navigator.permissions.query({ name:"geolocation"});
+      state = permission.state;
+    }
     
     return new Promise(resolve => {
       const successFn = position => {
@@ -68,6 +71,8 @@ class GeolocationSensorSingleton {
 
     this.sensors.add(sensor);
 
+    // Check whether we need to reconfigure our navigation.geolocation
+    // watch, ie. tear it down and recreate.
     const accuracy = this.calculateAccuracy();
     if (this.watchId && this.accuracy === accuracy) {
       // We don't need to reset, return.
