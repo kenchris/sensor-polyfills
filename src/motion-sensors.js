@@ -131,7 +131,7 @@ function toMat4FromQuat(mat, q) {
   return mat;
 }
 
-function worldToScreen(quaternion) {
+function deviceToScreen(quaternion) {
   return !quaternion ? null :
     rotateQuaternionByAxisAngle(
       quaternion,
@@ -146,13 +146,13 @@ class RelativeOrientationSensor extends DeviceOrientationMixin(Sensor, "deviceor
   constructor(options = {}) {
     super(options);
 
-    switch (options.coordinateSystem || 'world') {
+    switch (options.referenceFrame || 'device') {
       case 'screen':
         Object.defineProperty(this, "quaternion", {
-          get: () => worldToScreen(this[slot].quaternion)
+          get: () => deviceToScreen(this[slot].quaternion)
         });
         break;
-      case 'world':
+      case 'device':
       default:
         Object.defineProperty(this, "quaternion", {
           get: () => this[slot].quaternion
@@ -205,13 +205,13 @@ class AbsoluteOrientationSensor extends DeviceOrientationMixin(
   constructor(options = {}) {
     super(options);
 
-    switch (options.coordinateSystem || 'world') {
+    switch (options.referenceFrame || 'device') {
       case 'screen':
         Object.defineProperty(this, "quaternion", {
-          get: () => worldToScreen(this[slot].quaternion)
+          get: () => deviceToScreen(this[slot].quaternion)
         });
         break;
-      case 'world':
+      case 'device':
       default:
         Object.defineProperty(this, "quaternion", {
           get: () => this[slot].quaternion
