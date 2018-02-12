@@ -1,7 +1,4 @@
 // @ts-check
-export const __sensor__ = Symbol("__sensor__");
-
-const slot = __sensor__;
 
 function defineProperties(target, descriptions) {
   for (const property in descriptions) {
@@ -97,45 +94,67 @@ const SensorState = {
   ACTIVE: 3,
 }
 
+export const __sensor__ = Symbol("__sensor__");
+const slot = __sensor__;
+
+export const notifyError = Symbol("Sensor.notifyError");
+export const notifyActivatedState = Symbol("Sensor.notifyActivatedState");
+
+export const activateCallback = Symbol("Sensor.activateCallback");
+export const deactivateCallback = Symbol("Sensor.deactivateCallback");
+
 export class Sensor extends EventTarget {
+  [__sensor__] = {
+    // Internal slots
+    state: SensorState.IDLE,
+    frequency: null,
+
+    // Property backing
+    activated: false,
+    hasReading: false,
+    timestamp: null
+  };
+
+  [activateCallback]() {}
+  [deactivateCallback]() {}
+
+  [notifyError](message, name) {
+    let error = new SensorErrorEvent("error", {
+      error: new DOMException(message, name)
+    });
+    this.dispatchEvent(error);
+    this.stop();
+  }
+
+  [notifyActivatedState]() {
+    let activate = new Event("activate");
+    this[slot].activated = true;
+    this.dispatchEvent(activate);
+    this[slot].state = SensorState.ACTIVE;
+  }
+
   constructor(options) {
     super();
-    this[slot] = new WeakMap;
 
     defineOnEventListener(this, "reading");
     defineOnEventListener(this, "activate");
     defineOnEventListener(this, "error");
 
-    defineReadonlyProperties(this, slot, {
-      activated: false,
-      hasReading: false,
-      timestamp: null
-    })
-
-    this[slot].state = SensorState.IDLE;
-
-    this[slot].notifyError = (message, name) => {
-      let error = new SensorErrorEvent("error", {
-        error: new DOMException(message, name)
-      });
-      this.dispatchEvent(error);
-      this.stop();
-    }
-
-    this[slot].notifyActivatedState = () => {
-      let activate = new Event("activate");
-      this[slot].activated = true;
-      this.dispatchEvent(activate);
-      this[slot].state = SensorState.ACTIVE;
-    }
-
-    this[slot].activateCallback = () => {};
-    this[slot].deactivateCallback = () => {};
-
-    this[slot].frequency = null;
+    Object.defineProperty(this, "activated", {
+      get: () => this[slot].activated
+    });
+    Object.defineProperty(this, "hasReading", {
+      get: () => this[slot].hasReading
+    });
+    Object.defineProperty(this, "timestamp", {
+      get: () => this[slot].timestamp
+    });
 
     if (window && window.parent != window.top) {
-      throw new DOMException("Only instantiable in a top-level browsing context", "SecurityError");
+      throw new DOMException(
+        "Only instantiable in a top-level browsing context",
+        "SecurityError"
+      );
     }
 
     if (options && typeof(options.frequency) == "number") {
@@ -146,11 +165,12 @@ export class Sensor extends EventTarget {
   }
 
   start() {
-    if (this[slot].state === SensorState.ACTIVATING || this[slot].state === SensorState.ACTIVE) {
+    if (this[slot].state === SensorState.ACTIVATING
+        || this[slot].state === SensorState.ACTIVE) {
       return;
     }
     this[slot].state = SensorState.ACTIVATING;
-    this[slot].activateCallback();
+    this[activateCallback]();
   }
 
   stop() {
@@ -160,7 +180,7 @@ export class Sensor extends EventTarget {
     this[slot].activated = false;
     this[slot].hasReading = false;
     this[slot].timestamp = null;
-    this[slot].deactivateCallback();
+    this[deactivateCallback]();
 
     this[slot].state = SensorState.IDLE;
   }

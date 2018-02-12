@@ -1,11 +1,22 @@
 // @ts-check
-import { __sensor__, Sensor } from "./sensor.js";
+import { 
+  Sensor,
+  __sensor__,
+  activateCallback,
+  deactivateCallback,
+  notifyActivatedState,
+  notifyError
+} from "./sensor.js";
 
+const handleErrorCallback = Symbol("handleError");
+const handleEventCallback = Symbol("handleEvent");
 const slot = __sensor__;
 
 class GeolocationSensorSingleton { 
   constructor() {
+    // @ts-ignore
     if (!this.constructor.instance) {
+      // @ts-ignore
       this.constructor.instance = this;
     }
 
@@ -14,6 +25,7 @@ class GeolocationSensorSingleton {
     this.accuracy = null;
     this.lastPosition = null;
   
+    // @ts-ignore
     return this.constructor.instance;
   }
 
@@ -60,7 +72,7 @@ class GeolocationSensorSingleton {
   async register(sensor) {
     const permission = await this.obtainPermission();
     if (permission !== "granted") {
-      sensor[slot].notifyError("Permission denied.", "NowAllowedError");
+      sensor[notifyError]("Permission denied.", "NowAllowedError");
       return;
     }
 
@@ -68,7 +80,7 @@ class GeolocationSensorSingleton {
       const age = performance.now() - this.lastPosition.timeStamp;
       const maxAge = sensor[slot].options.maxAge;
       if (maxAge == null || age <= maxAge) {
-        sensor[slot].handleEvent(age, this.lastPosition.coords);
+        sensor[handleEventCallback](age, this.lastPosition.coords);
       }
     }
 
@@ -93,7 +105,7 @@ class GeolocationSensorSingleton {
       const coords = position.coords;
 
       for (const sensor of this.sensors) {
-        sensor[slot].handleEvent(timestamp, coords);
+        sensor[handleEventCallback](timestamp, coords);
       }
     }
 
@@ -113,7 +125,7 @@ class GeolocationSensorSingleton {
           type = "UnknownError";
       }
       for (const sensor of this.sensors) {
-        sensor[slot].handleError(error.message, type);
+        sensor[handleErrorCallback](error.message, type);
       }
     }
 
@@ -162,36 +174,36 @@ class GeolocationSensor extends Sensor {
         get: () => propertyBag[propName]
       });
     }
-
-    this[slot].handleEvent = (timestamp, coords) => {
-      if (!this[slot].activated) {
-        this[slot].notifyActivatedState();
-      }
-
-      this[slot].timestamp = timestamp;
-
-      this[slot].accuracy = coords.accuracy;
-      this[slot].altitude = coords.altitude;
-      this[slot].altitudeAccuracy = coords.altitudeAccuracy;
-      this[slot].heading = coords.heading;
-      this[slot].latitude = coords.latitude;
-      this[slot].longitude = coords.longitude;
-      this[slot].speed = coords.speed;
-
-      this[slot].hasReading = true;
-      this.dispatchEvent(new Event("reading"));
-    }
-
-    this[slot].handleError = (message, type) => {
-      this[slot].notifyError(message, type);
-    }
-
-    this[slot].activateCallback = () => {
-      (new GeolocationSensorSingleton()).register(this);
-    }
-
-    this[slot].deactivateCallback = () => {
-      (new GeolocationSensorSingleton()).deregister(this);
-    }
   }
+
+  [handleEventCallback] = (timestamp, coords) => {
+    if (!this[slot].activated) {
+      this[notifyActivatedState]();
+    }
+
+    this[slot].timestamp = timestamp;
+
+    this[slot].accuracy = coords.accuracy;
+    this[slot].altitude = coords.altitude;
+    this[slot].altitudeAccuracy = coords.altitudeAccuracy;
+    this[slot].heading = coords.heading;
+    this[slot].latitude = coords.latitude;
+    this[slot].longitude = coords.longitude;
+    this[slot].speed = coords.speed;
+
+    this[slot].hasReading = true;
+    this.dispatchEvent(new Event("reading"));
+  };
+
+  [handleErrorCallback] = (message, type) => {
+    this[notifyError](message, type);
+  };
+
+  [activateCallback]() {
+    (new GeolocationSensorSingleton()).register(this);
+  };
+
+  [deactivateCallback]() {
+    (new GeolocationSensorSingleton()).deregister(this);
+  };
 }
