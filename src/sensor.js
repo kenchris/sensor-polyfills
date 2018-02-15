@@ -121,7 +121,7 @@ export function defineReadonlyProperties(target, slot, descriptions) {
   }
 }
 
-class SensorErrorEvent extends Event {
+export class SensorErrorEvent extends Event {
   constructor(type, errorEventInitDict) {
     super(type, errorEventInitDict);
 

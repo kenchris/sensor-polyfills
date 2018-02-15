@@ -12,14 +12,14 @@
       padding:0;
     }
     #map {
-      position:absolute;
+      position: absolute;
       top:0;
       bottom:0;
       width:100%;
     }
     #info_box {
       font-family: monospace, sans-serif; 
-      position:absolute;
+      position: absolute;
       top:0;
       right:0;
       padding: 10px;
@@ -133,11 +133,11 @@
     </script>
     <script type="module">
       import { GeolocationSensor } from './src/geolocation-sensor.js';
+      import { AbortController, AbortSignal } from './src/sensor.js';
 
       window.GeolocationSensor = GeolocationSensor;
 
       const sensor = new GeolocationSensor({ accuracy: "low" });
-      sensor.start();
       sensor.onreading = () => {
         const coords = [sensor.latitude, sensor.longitude];
         updateMap(null, coords, sensor.accuracy);
@@ -146,8 +146,8 @@
         updateMap(error);
       };
 
-      let log = console.log;
-      console.log = (message, ...rest) => {
+      let log = console.error;
+      console.error = (message, ...rest) => {
         const div = document.querySelector('#console');
         let child = document.createElement('div');
         child.innerText = message;
@@ -155,22 +155,62 @@
 
         log.call(console, message, ...rest);
       }
+
+      window._start = function(target) {
+        if (!sensor.activated) {
+          target.innerText = "Stop";
+          sensor.start();
+        } else {
+          target.innerText = "Start";
+          sensor.stop();
+        }
+      }
+
+      let controller = null;
+      window._once = async function(target) {
+        if (controller) {
+          controller.abort();
+          target.innerText = "OneShot";
+          controller = null;
+          return;
+        }
+
+        target.innerText = "Cancel OneShot";
+        controller = new AbortController;
+        const signal = controller.signal;
+
+        try {
+          const value = await GeolocationSensor.read({ signal });
+          console.log(value);
+          target.innerText = "OneShot";
+          controller = null;
+        } catch(err) {
+          console.error(err);
+          target.innerText = "OneShot";
+          controller = null;
+        }
+      }
+
     </script>
   </head>
   <body>
     <div id="note_box">
       <p>
-                We're using the navigator.permissions.query() API to find out
-                whether you allow this site to access your location. Use your
-                browser UI to grant location access to this site if you wish
-                to experience this example.
+        We're using the navigator.permissions.query() API to find out
+        whether you allow this site to access your location. Use your
+        browser UI to grant location access to this site if you wish
+        to experience this example.
       </p>
       <p>
-                Chrome: Secure badge &gt; Location &gt; Always allow on this site
+        Chrome: Secure badge &gt; Location &gt; Always allow on this site
       </p>
     </div>
     <div id="map"></div>
-    <p id="info_box"><a href="">refresh</a></p>
+    <p id="info_box">
+      <a href="">refresh</a>
+      <button onclick="_start(this)">Start</button>
+      <button onclick="_once(this)">OneShot</button>
+    </p>
     <div id="console"></div>
-    </body>
+  </body>
 </html>
