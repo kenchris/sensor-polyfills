@@ -54,12 +54,12 @@ export class EventTarget extends EventTargetMixin(Object) {};
 const __abort__ = Symbol("__abort__");
 
 export class AbortSignal extends EventTarget {
-  [__abort__] = {
-    aborted: false
-  };
-
   constructor() {
     super();
+
+    this[__abort__] = {
+      aborted: false
+    };
 
     defineOnEventListener(this, "abort");
     Object.defineProperty(this, "aborted", {
@@ -156,17 +156,6 @@ export const activateCallback = Symbol("Sensor.activateCallback");
 export const deactivateCallback = Symbol("Sensor.deactivateCallback");
 
 export class Sensor extends EventTarget {
-  [__sensor__] = {
-    // Internal slots
-    state: SensorState.IDLE,
-    frequency: null,
-
-    // Property backing
-    activated: false,
-    hasReading: false,
-    timestamp: null
-  };
-
   [activateCallback]() {}
   [deactivateCallback]() {}
 
@@ -187,6 +176,17 @@ export class Sensor extends EventTarget {
 
   constructor(options) {
     super();
+
+    this[__sensor__] = {
+      // Internal slots
+      state: SensorState.IDLE,
+      frequency: null,
+
+      // Property backing
+      activated: false,
+      hasReading: false,
+      timestamp: null
+    };
 
     defineOnEventListener(this, "reading");
     defineOnEventListener(this, "activate");
