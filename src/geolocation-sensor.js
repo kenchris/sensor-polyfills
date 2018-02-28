@@ -39,7 +39,7 @@ async function obtainPermission() {
       }
     }
 
-    const options = { maximumAge: Infinity, timeout: 10 };
+    const options = { maximumAge: Infinity, timeout: 0 };
     navigator.geolocation.getCurrentPosition(successFn, errorFn, options);
   });
 }
@@ -101,7 +101,7 @@ export const GeolocationSensor = window.GeolocationSensor ||
 class GeolocationSensor extends Sensor {
 
   static read(options = {}) {
-    return new Promise((resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
       const onerror = (message, name) => {
         let error = new SensorErrorEvent("error", {
           error: new DOMException(message, name)
@@ -130,7 +130,7 @@ class GeolocationSensor extends Sensor {
         return reject(new DOMException("Read was cancelled", "AbortError"));
       }
 
-      const watchId = register(options, onreading, onerror);
+      const watchId = await register(options, onreading, onerror);
 
       if (signal) {
         signal.addEventListener("abort", () => {
@@ -191,12 +191,23 @@ class GeolocationSensor extends Sensor {
       }
     }
 
-    this[slot].watchId = register(this[slot].options,
+    register(this[slot].options,
       onreading, onerror, onactivated
-    );
+    ).then(watchId => this[slot].watchId = watchId);
   };
 
   [deactivateCallback]() {
     deregister(this[slot].watchId);
+    this[slot].timestamp = null;
+
+    this[slot].accuracy = null;
+    this[slot].altitude = null;
+    this[slot].altitudeAccuracy = null;
+    this[slot].heading = null;
+    this[slot].latitude = null;
+    this[slot].longitude = null;
+    this[slot].speed = null;
+
+    this[slot].hasReading = false;
   };
 }

@@ -4,8 +4,10 @@
 <title>Generic Sensor API polyfills tests</title>
 <script src="tests/testharness.js"></script>
 <script src="tests/testharnessreport.js"></script>
+<script src="tests/geolocation-tests.js"></script>
 <script src="tests/EventTarget-tests.js"></script>
 <script src="tests/generic-sensor-tests.js"></script>
+<meta name="timeout" content="long">
 <script type="module">
 import {
   AbsoluteOrientationSensor,
@@ -15,6 +17,10 @@ import {
   LinearAccelerationSensor,
   GravitySensor
 } from './src/motion-sensors.js';
+
+import {
+  GeolocationSensor
+} from './src/geolocation-sensor.js';
 
 import {
   EventTarget,
@@ -31,6 +37,9 @@ class TestB extends EventTargetMixin(HTMLElement) {
     console.log(this);
   }
 }
+
+runGeolocationSensorTests(GeolocationSensor);
+runGenericSensorTests(GeolocationSensor);
 
 runEventTarget_dispatchEvent(TestB);
 

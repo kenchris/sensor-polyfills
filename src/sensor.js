@@ -224,7 +224,7 @@ export class Sensor extends EventTarget {
       {
         const methodName = `on${event.type}`;
         if (typeof this[methodName] == "function") {
-            this[methodName](event);
+          this[methodName](event);
         }
       }
       default:
