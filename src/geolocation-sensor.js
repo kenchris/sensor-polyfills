@@ -44,13 +44,7 @@ async function obtainPermission() {
   });
 }
 
-async function register(options, onreading, onerror, onactivated) {
-  const permission = await obtainPermission();
-  if (permission !== "granted") {
-    onerror("Permission denied.", "NowAllowedError");
-    return;
-  }
-
+function register(options, onreading, onerror, onactivated) {
   const handleEvent = position => {
     const timestamp = position.timestamp - performance.timing.navigationStart;
     const coords = position.coords;
@@ -82,13 +76,10 @@ async function register(options, onreading, onerror, onactivated) {
     timeout: Infinity
   }
 
-  if (onactivated) {
-    onactivated();
-  }
-
   const watchId = navigator.geolocation.watchPosition(
     handleEvent, handleError, watchOptions
   );
+
   return watchId;
 }
 
@@ -96,11 +87,72 @@ function deregister(watchId) {
   navigator.geolocation.clearWatch(watchId);
 }
 
+// Old geolocation API is FILO; on Chrome at least.
+class FIFOGeolocationEvents {
+  constructor() {
+    if (!this.constructor.instance) {
+      this.constructor.instance = this;
+    }
+
+    // You can iterate through the elements of a map in insertion order.
+    this.subscribers = new Map();
+    this.options = {};
+    this.watchId = null;
+
+    this.lastReading = null;
+
+    return this.constructor.instance;
+  }
+
+  unsubscribe(obj) {
+    this.subscribers.delete(obj);
+    if (!this.subscribers.size && this.watchId) {
+      deregister(this.watchId);
+      this.watchId = null;
+    }
+  }
+
+  subscribe(obj, options, onreading, onerror) {
+    const fifoOnReading = (...args) => {
+      this.lastReading = args;
+      for ({ onreading } of this.subscribers.values()) {
+        if (typeof onreading === "function") {
+          onreading(...args);
+        }
+      }
+    }
+
+    const fifoOnError = (...args) => {
+      for ({ onerror } of this.subscribers.values()) {
+        if (typeof onerror === "function") {
+          onerror(...args);
+        }
+      }
+    }
+
+    // TODO(spec): Generate the most precise options here
+    // ie. lowest maximum-age and highest precision.
+    this.options = options;
+
+    if (this.watchId) {
+      deregister(this.watchId);
+    }
+    // TODO(spec): Ensure lastReading is still valid.
+    if (this.lastReading && typeof onreading === "function") {
+      onreading(...this.lastReading);
+    }
+    this.subscribers.set(obj, { onreading, onerror });
+    this.watchId = register(this.options,
+      fifoOnReading, fifoOnError
+    );
+  }
+}
+
 // @ts-ignore
 export const GeolocationSensor = window.GeolocationSensor ||
 class GeolocationSensor extends Sensor {
 
-  static read(options = {}) {
+  static async read(options = {}) {
     return new Promise(async (resolve, reject) => {
       const onerror = (message, name) => {
         let error = new SensorErrorEvent("error", {
@@ -130,7 +182,12 @@ class GeolocationSensor extends Sensor {
         return reject(new DOMException("Read was cancelled", "AbortError"));
       }
 
-      const watchId = await register(options, onreading, onerror);
+      const permission = await obtainPermission();
+      if (permission !== "granted") {
+        onerror("Permission denied.", "NowAllowedError");
+        return;
+      }
+      const watchId = register(options, onreading, onerror);
 
       if (signal) {
         signal.addEventListener("abort", () => {
@@ -145,6 +202,7 @@ class GeolocationSensor extends Sensor {
     super(options);
 
     this[slot].options = options;
+    this[slot].fifo = new FIFOGeolocationEvents();
 
     const props = {
       latitude: null,
@@ -165,7 +223,7 @@ class GeolocationSensor extends Sensor {
     }
   }
 
-  [activateCallback]() {
+  async [activateCallback]() {
     const onreading = (timestamp, coords) => {
       this[slot].timestamp = timestamp;
 
@@ -185,19 +243,24 @@ class GeolocationSensor extends Sensor {
       this[notifyError](message, type);
     };
 
-    const onactivated = () => {
-      if (!this[slot].activated) {
-        this[notifyActivatedState]();
-      }
+    const permission = await obtainPermission();
+    if (permission !== "granted") {
+      onerror("Permission denied.", "NowAllowedError");
+      return;
     }
 
-    register(this[slot].options,
-      onreading, onerror, onactivated
-    ).then(watchId => this[slot].watchId = watchId);
+    this[slot].fifo.subscribe(
+      this, this[slot].options,
+      onreading, onerror
+    );
+
+    if (!this[slot].activated) {
+      this[notifyActivatedState]();
+    }
   };
 
   [deactivateCallback]() {
-    deregister(this[slot].watchId);
+    this[slot].fifo.unsubscribe(this);
     this[slot].timestamp = null;
 
     this[slot].accuracy = null;
