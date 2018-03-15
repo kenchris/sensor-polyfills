@@ -27,6 +27,20 @@ if (screen.orientation) {
   });
 }
 
+const rotationToRadian = (function() {
+  // Returns Chrome version, or null if not Chrome.
+  const match = navigator.userAgent.match(/.*Chrome\/([0-9]+)/);
+  const chromeVersion = match ? parseInt(match[1], 10) : null;
+
+  // DeviceMotion/Orientation API return deg/s (except Chrome,
+  // but fixing in M66). Gyroscope needs rad/s.
+  const returnsDegrees = chromeVersion === null || chromeVersion >= 66;
+  const conversion = returnsDegrees ? Math.PI / 180 : 1.0;
+  return function(value) {
+    return value * conversion;
+  }
+})();
+
 const DeviceOrientationMixin = (superclass, ...eventNames) => class extends superclass {
   constructor(...args) {
     // @ts-ignore
@@ -286,9 +300,9 @@ class Gyroscope extends DeviceOrientationMixin(Sensor, "devicemotion") {
 
     this[slot].timestamp = performance.now();
 
-    this[slot].x = event.rotationRate.alpha;
-    this[slot].y = event.rotationRate.beta;
-    this[slot].z = event.rotationRate.gamma;
+    this[slot].x = rotationToRadian(event.rotationRate.alpha);
+    this[slot].y = rotationToRadian(event.rotationRate.beta);
+    this[slot].z = rotationToRadian(event.rotationRate.gamma);
 
     this[slot].hasReading = true;
     this.dispatchEvent(new Event("reading"));
