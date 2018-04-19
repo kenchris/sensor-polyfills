@@ -69,3 +69,7 @@ Learn more
 ===
 
 - [Sensors For The Web article on Google's Web Fundaments](https://developers.google.com/web/updates/2017/09/sensors-for-the-web) - a web developer-oriented article explaining how to use the Generic Sensor-based APIs.
+
+Reporting a security issue
+===
+If you have information about a security issue or vulnerability with an Intel-maintained open source project on https://github.com/intel, please send an e-mail to secure-opensource@intel.com. Encrypt sensitive information using our PGP public key. For issues related to Intel products, please visit https://security-center.intel.com.
