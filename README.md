@@ -1,11 +1,9 @@
 W3C Generic Sensor API polyfills
 ===
 
-*Beware, we're still under active development. Expect rough edges.*
-
 This is a polyfill for [Generic Sensor](https://w3c.github.io/sensors/)-based [motions sensors](https://w3c.github.io/motion-sensors/) to make migration from the old [DeviceOrientationEvent](https://w3c.github.io/deviceorientation/spec-source-orientation.html#deviceorientation)/[DeviceMotionEvent](https://w3c.github.io/deviceorientation/spec-source-orientation.html#devicemotion) to the new APIs a smoother experience.
 
-In particular, this polyfill will allow the users of modern browsers to get a feel of the new API shape before it ships ([Chrome 63 has a native implementation](#how-to-enable-the-native-implementation-in-chrome)).
+In particular, this polyfill will allow the users of modern browsers to get a feel of the new API shape before it ships more broadly. Chrome 63 has a native implementation [behind a flag](#how-to-enable-the-native-implementation-in-chrome) and starting Chrome 67 the feature is [enabled by default](https://www.chromestatus.com/feature/5698781827825664).
 
 `src/motion-sensors.js` implements the following interfaces:
 
@@ -40,26 +38,9 @@ let orientation = new AbsoluteOrientationSensor({ frequency: 60 });
 How to enable the native implementation in Chrome
 ===
 
-There are two ways: *Origin Trial* and *Enable via `chrome://flags`*.
+*Chrome 67 or later:* the native implementation is enabled by default.
 
-## Origin Trial
-
-
-Generic Sensor APIs are currently available as an [Origin Trial](https://bit.ly/OriginTrials) in Chrome 63+.
-
-To enable native Generic Sensor API implementation for all Chrome users on your site:
-
-1. Go to https://bit.ly/OriginTrialsSignup to get a token.
-2. Add the token to your web page as follows (replace `...` with your token):
-```
-<!-- Origin Trial Token, feature = Generic Sensors, origin = https://example.org, expires ="2018-01-18" -->
-<meta http-equiv="origin-trial" data-feature="Generic Sensors" data-expires="2018-01-18" content="...">
-```
-3. Optional: add `motion-sensors.js` polyfill to cater for non-Chrome users (see [How to use the polyfill](#how-to-use-the-polyfill)).
-
-## Enable via `chrome://flags`
-
-The native implementation is behind the following feature flags in Chrome 63+:
+*Chrome 63-66:* the native implementation is behind the following feature flags:
 
 Generic Sensor (`chrome://flags/#enable-generic-sensor`):
 - `Accelerometer`
