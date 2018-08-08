@@ -6,11 +6,11 @@ import {
   notifyError,
   notifyActivatedState,
   activateCallback,
-  deactivateCallback
-} from "./sensor.js";
+  deactivateCallback,
+} from './sensor.js';
 
 const slot = __sensor__;
-const handleEventCallback = Symbol("handleEvent");
+const handleEventCallback = Symbol('handleEvent');
 
 let orientation;
 
@@ -22,8 +22,10 @@ if (screen.orientation) {
   orientation = screen.msOrientation;
 } else {
   orientation = {};
-  Object.defineProperty(orientation, "angle", {
-    get: () => { return (window.orientation || 0) }
+  Object.defineProperty(orientation, 'angle', {
+    get: () => {
+ return (window.orientation || 0);
+},
   });
 }
 
@@ -38,7 +40,7 @@ const rotationToRadian = (function() {
   const conversion = returnsDegrees ? Math.PI / 180 : 1.0;
   return function(value) {
     return value * conversion;
-  }
+  };
 })();
 
 const DeviceOrientationMixin = (superclass, ...eventNames) => class extends superclass {
@@ -55,16 +57,16 @@ const DeviceOrientationMixin = (superclass, ...eventNames) => class extends supe
   }
 
   [activateCallback]() {
-    window.addEventListener(this[slot].eventName, this[handleEventCallback].bind(this), { capture: true });
+    window.addEventListener(this[slot].eventName, this[handleEventCallback].bind(this), {capture: true});
   }
 
   [deactivateCallback]() {
-    window.removeEventListener(this[slot].eventName, this[handleEventCallback].bind(this), { capture: true });
+    window.removeEventListener(this[slot].eventName, this[handleEventCallback].bind(this), {capture: true});
   }
 };
 
 function toQuaternionFromEuler(alpha, beta, gamma) {
-  const degToRad = Math.PI / 180
+  const degToRad = Math.PI / 180;
 
   const x = (beta || 0) * degToRad;
   const y = (gamma || 0) * degToRad;
@@ -93,7 +95,7 @@ function rotateQuaternionByAxisAngle(quat, axis, angle) {
     axis[0] * sHalfAngle,
     axis[1] * sHalfAngle,
     axis[2] * sHalfAngle,
-    cHalfAngle
+    cHalfAngle,
   ];
 
   function multiplyQuaternion(a, b) {
@@ -111,7 +113,7 @@ function rotateQuaternionByAxisAngle(quat, axis, angle) {
       return [0, 0, 0, 1];
     }
 
-    return quat.map(v => v / length);
+    return quat.map((v) => v / length);
   }
 
   return normalizeQuaternion(multiplyQuaternion(quat, transformQuat));
@@ -156,20 +158,19 @@ function deviceToScreen(quaternion) {
 
 // @ts-ignore
 export const RelativeOrientationSensor = window.RelativeOrientationSensor ||
-class RelativeOrientationSensor extends DeviceOrientationMixin(Sensor, "deviceorientation") {
+class RelativeOrientationSensor extends DeviceOrientationMixin(Sensor, 'deviceorientation') {
   constructor(options = {}) {
     super(options);
 
     switch (options.referenceFrame || 'device') {
       case 'screen':
-        Object.defineProperty(this, "quaternion", {
-          get: () => deviceToScreen(this[slot].quaternion)
+        Object.defineProperty(this, 'quaternion', {
+          get: () => deviceToScreen(this[slot].quaternion),
         });
         break;
-      case 'device':
-      default:
-        Object.defineProperty(this, "quaternion", {
-          get: () => this[slot].quaternion
+      default: // incl. case 'device'
+        Object.defineProperty(this, 'quaternion', {
+          get: () => this[slot].quaternion,
         });
     }
   }
@@ -182,7 +183,7 @@ class RelativeOrientationSensor extends DeviceOrientationMixin(Sensor, "deviceor
       // the resulting data is more accurate. In either case,
       // the absolute property must be set accordingly to reflect
       // the choice.
-      this[notifyError]("Could not connect to a sensor", "NotReadableError");
+      this[notifyError]('Could not connect to a sensor', 'NotReadableError');
       return;
     }
 
@@ -199,7 +200,7 @@ class RelativeOrientationSensor extends DeviceOrientationMixin(Sensor, "deviceor
     );
 
     this[slot].hasReading = true;
-    this.dispatchEvent(new Event("reading"));
+    this.dispatchEvent(new Event('reading'));
   }
 
   [deactivateCallback]() {
@@ -210,25 +211,24 @@ class RelativeOrientationSensor extends DeviceOrientationMixin(Sensor, "deviceor
   populateMatrix(mat) {
     toMat4FromQuat(mat, this.quaternion);
   }
-}
+};
 
 // @ts-ignore
 export const AbsoluteOrientationSensor = window.AbsoluteOrientationSensor ||
 class AbsoluteOrientationSensor extends DeviceOrientationMixin(
-  Sensor, "deviceorientationabsolute", "deviceorientation") {
+  Sensor, 'deviceorientationabsolute', 'deviceorientation') {
   constructor(options = {}) {
     super(options);
 
     switch (options.referenceFrame || 'device') {
       case 'screen':
-        Object.defineProperty(this, "quaternion", {
-          get: () => deviceToScreen(this[slot].quaternion)
+        Object.defineProperty(this, 'quaternion', {
+          get: () => deviceToScreen(this[slot].quaternion),
         });
         break;
-      case 'device':
-      default:
-        Object.defineProperty(this, "quaternion", {
-          get: () => this[slot].quaternion
+      default: // incl. case 'device'
+        Object.defineProperty(this, 'quaternion', {
+          get: () => this[slot].quaternion,
         });
     }
   }
@@ -236,14 +236,14 @@ class AbsoluteOrientationSensor extends DeviceOrientationMixin(
   [handleEventCallback](event) {
     // If absolute is set, or webkitCompassHeading exists,
     // absolute values should be available.
-    const isAbsolute = event.absolute === true || "webkitCompassHeading" in event;
+    const isAbsolute = event.absolute === true || 'webkitCompassHeading' in event;
     const hasValue = event.alpha !== null || event.webkitCompassHeading !== undefined;
 
     if (!isAbsolute || !hasValue) {
       // Spec: If an implementation can never provide absolute
       // orientation information, the event should be fired with
       // the alpha, beta and gamma attributes set to null.
-      this[notifyError]("Could not connect to a sensor", "NotReadableError");
+      this[notifyError]('Could not connect to a sensor', 'NotReadableError');
       return;
     }
 
@@ -262,7 +262,7 @@ class AbsoluteOrientationSensor extends DeviceOrientationMixin(
       event.gamma
     );
 
-    this.dispatchEvent(new Event("reading"));
+    this.dispatchEvent(new Event('reading'));
   }
 
   [deactivateCallback]() {
@@ -273,24 +273,24 @@ class AbsoluteOrientationSensor extends DeviceOrientationMixin(
   populateMatrix(mat) {
     toMat4FromQuat(mat, this.quaternion);
   }
-}
+};
 
 // @ts-ignore
 export const Gyroscope = window.Gyroscope ||
-class Gyroscope extends DeviceOrientationMixin(Sensor, "devicemotion") {
+class Gyroscope extends DeviceOrientationMixin(Sensor, 'devicemotion') {
   constructor(options) {
     super(options);
     defineReadonlyProperties(this, slot, {
       x: null,
       y: null,
-      z: null
+      z: null,
     });
   }
 
   [handleEventCallback](event) {
     // If there is no sensor we will get values equal to null.
     if (event.rotationRate.alpha === null) {
-      this[notifyError]("Could not connect to a sensor", "NotReadableError");
+      this[notifyError]('Could not connect to a sensor', 'NotReadableError');
       return;
     }
 
@@ -305,7 +305,7 @@ class Gyroscope extends DeviceOrientationMixin(Sensor, "devicemotion") {
     this[slot].z = rotationToRadian(event.rotationRate.gamma);
 
     this[slot].hasReading = true;
-    this.dispatchEvent(new Event("reading"));
+    this.dispatchEvent(new Event('reading'));
   }
 
   [deactivateCallback]() {
@@ -314,24 +314,24 @@ class Gyroscope extends DeviceOrientationMixin(Sensor, "devicemotion") {
     this[slot].y = null;
     this[slot].z = null;
   }
-}
+};
 
 // @ts-ignore
 export const Accelerometer = window.Accelerometer ||
-class Accelerometer extends DeviceOrientationMixin(Sensor, "devicemotion") {
+class Accelerometer extends DeviceOrientationMixin(Sensor, 'devicemotion') {
   constructor(options) {
     super(options);
     defineReadonlyProperties(this, slot, {
       x: null,
       y: null,
-      z: null
+      z: null,
     });
   }
 
   [handleEventCallback](event) {
     // If there is no sensor we will get values equal to null.
     if (event.accelerationIncludingGravity.x === null) {
-      this[notifyError]("Could not connect to a sensor", "NotReadableError");
+      this[notifyError]('Could not connect to a sensor', 'NotReadableError');
       return;
     }
 
@@ -346,7 +346,7 @@ class Accelerometer extends DeviceOrientationMixin(Sensor, "devicemotion") {
     this[slot].z = event.accelerationIncludingGravity.z;
 
     this[slot].hasReading = true;
-    this.dispatchEvent(new Event("reading"));
+    this.dispatchEvent(new Event('reading'));
   }
 
   [deactivateCallback]() {
@@ -355,24 +355,24 @@ class Accelerometer extends DeviceOrientationMixin(Sensor, "devicemotion") {
     this[slot].y = null;
     this[slot].z = null;
   }
-}
+};
 
 // @ts-ignore
 export const LinearAccelerationSensor = window.LinearAccelerationSensor ||
-class LinearAccelerationSensor extends DeviceOrientationMixin(Sensor, "devicemotion") {
+class LinearAccelerationSensor extends DeviceOrientationMixin(Sensor, 'devicemotion') {
   constructor(options) {
     super(options);
     defineReadonlyProperties(this, slot, {
       x: null,
       y: null,
-      z: null
+      z: null,
     });
   }
 
   [handleEventCallback](event) {
     // If there is no sensor we will get values equal to null.
     if (event.acceleration.x === null) {
-      this[notifyError]("Could not connect to a sensor", "NotReadableError");
+      this[notifyError]('Could not connect to a sensor', 'NotReadableError');
       return;
     }
 
@@ -387,7 +387,7 @@ class LinearAccelerationSensor extends DeviceOrientationMixin(Sensor, "devicemot
     this[slot].z = event.acceleration.z;
 
     this[slot].hasReading = true;
-    this.dispatchEvent(new Event("reading"));
+    this.dispatchEvent(new Event('reading'));
   }
 
   [deactivateCallback]() {
@@ -396,24 +396,24 @@ class LinearAccelerationSensor extends DeviceOrientationMixin(Sensor, "devicemot
     this[slot].y = null;
     this[slot].z = null;
   }
-}
+};
 
 // @ts-ignore
 export const GravitySensor = window.GravitySensor ||
- class GravitySensor extends DeviceOrientationMixin(Sensor, "devicemotion") {
+ class GravitySensor extends DeviceOrientationMixin(Sensor, 'devicemotion') {
   constructor(options) {
     super(options);
     defineReadonlyProperties(this, slot, {
       x: null,
       y: null,
-      z: null
+      z: null,
     });
   }
 
   [handleEventCallback](event) {
     // If there is no sensor we will get values equal to null.
     if (event.acceleration.x === null || event.accelerationIncludingGravity.x === null) {
-      this[notifyError]("Could not connect to a sensor", "NotReadableError");
+      this[notifyError]('Could not connect to a sensor', 'NotReadableError');
       return;
     }
 
@@ -428,7 +428,7 @@ export const GravitySensor = window.GravitySensor ||
     this[slot].z = event.accelerationIncludingGravity.z - event.acceleration.z;
 
     this[slot].hasReading = true;
-    this.dispatchEvent(new Event("reading"));
+    this.dispatchEvent(new Event('reading'));
   }
 
   [deactivateCallback]() {
@@ -437,4 +437,4 @@ export const GravitySensor = window.GravitySensor ||
     this[slot].y = null;
     this[slot].z = null;
   }
-}
+};

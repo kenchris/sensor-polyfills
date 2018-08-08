@@ -7,74 +7,74 @@ import {
   deactivateCallback,
   notifyActivatedState,
   notifyError,
-  AbortController,
-  AbortSignal
-} from "./sensor.js";
+  // AbortController,
+  // AbortSignal,
+} from './sensor.js';
 
 const slot = __sensor__;
 
 async function obtainPermission() {
-  let state = "prompt"; // Default for geolocation.
+  let state = 'prompt'; // Default for geolocation.
   // @ts-ignore
   if (navigator.permissions) {
     // @ts-ignore
-    const permission = await navigator.permissions.query({ name:"geolocation"});
+    const permission = await navigator.permissions.query({name: 'geolocation'});
     state = permission.state;
   }
 
-  return new Promise(resolve => {
-    if (state === "granted") {
+  return new Promise((resolve) => {
+    if (state === 'granted') {
       return resolve(state);
     }
 
-    const successFn = _ => {
-      resolve("granted");
-    }
+    const successFn = (_) => {
+      resolve('granted');
+    };
 
-    const errorFn = err => {
+    const errorFn = (err) => {
       if (err.code === err.PERMISSION_DENIED) {
-        resolve("denied");
+        resolve('denied');
       } else {
         resolve(state);
       }
-    }
+    };
 
-    const options = { maximumAge: Infinity, timeout: 0 };
+    const options = {maximumAge: Infinity, timeout: 0};
     navigator.geolocation.getCurrentPosition(successFn, errorFn, options);
   });
 }
 
 function register(options, onreading, onerror, onactivated) {
-  const handleEvent = position => {
+  const handleEvent = (position) => {
     const timestamp = position.timestamp - performance.timing.navigationStart;
     const coords = position.coords;
 
     onreading(timestamp, coords);
-  }
+  };
 
-  const handleError = error => {
+  const handleError = (error) => {
     let type;
-    switch(error.code) {
+    switch (error.code) {
       case error.TIMEOUT:
-        type = "TimeoutError";
+        type = 'TimeoutError';
         break;
       case error.PERMISSION_DENIED:
-        type = "NotAllowedError";
+        type = 'NotAllowedError';
         break;
       case error.POSITION_UNAVAILABLE:
-        type = "NotReadableError";
+        type = 'NotReadableError';
         break;
       default:
-        type = "UnknownError";
+        type = 'UnknownError';
     }
     onerror(error.message, type);
-  }
+  };
 
   const watchOptions = {
     enableHighAccuracy: false,
     maximumAge: 0,
-    timeout: Infinity
-  }
+    timeout: Infinity,
+  };
 
   const watchId = navigator.geolocation.watchPosition(
     handleEvent, handleError, watchOptions
@@ -115,20 +115,20 @@ class FIFOGeolocationEvents {
   subscribe(obj, options, onreading, onerror) {
     const fifoOnReading = (...args) => {
       this.lastReading = args;
-      for ({ onreading } of this.subscribers.values()) {
-        if (typeof onreading === "function") {
+      for ({onreading} of this.subscribers.values()) {
+        if (typeof onreading === 'function') {
           onreading(...args);
         }
       }
-    }
+    };
 
     const fifoOnError = (...args) => {
-      for ({ onerror } of this.subscribers.values()) {
-        if (typeof onerror === "function") {
+      for ({onerror} of this.subscribers.values()) {
+        if (typeof onerror === 'function') {
           onerror(...args);
         }
       }
-    }
+    };
 
     // TODO(spec): Generate the most precise options here
     // ie. lowest maximum-age and highest precision.
@@ -138,10 +138,10 @@ class FIFOGeolocationEvents {
       deregister(this.watchId);
     }
     // TODO(spec): Ensure lastReading is still valid.
-    if (this.lastReading && typeof onreading === "function") {
+    if (this.lastReading && typeof onreading === 'function') {
       onreading(...this.lastReading);
     }
-    this.subscribers.set(obj, { onreading, onerror });
+    this.subscribers.set(obj, {onreading, onerror});
     this.watchId = register(this.options,
       fifoOnReading, fifoOnError
     );
@@ -151,16 +151,15 @@ class FIFOGeolocationEvents {
 // @ts-ignore
 export const GeolocationSensor = window.GeolocationSensor ||
 class GeolocationSensor extends Sensor {
-
   static async read(options = {}) {
     return new Promise(async (resolve, reject) => {
       const onerror = (message, name) => {
-        let error = new SensorErrorEvent("error", {
-          error: new DOMException(message, name)
+        let error = new SensorErrorEvent('error', {
+          error: new DOMException(message, name),
         });
         deregister(watchId);
         reject(error);
-      }
+      };
 
       const onreading = (timestamp, coords) => {
         const reading = {
@@ -171,32 +170,32 @@ class GeolocationSensor extends Sensor {
           heading: coords.heading,
           latitude: coords.latitude,
           longitude: coords.longitude,
-          speed: coords.speed
-        }
+          speed: coords.speed,
+        };
         deregister(watchId);
         resolve(reading);
-      }
+      };
 
       const signal = options.signal;
       if (signal && signal.aborted) {
-        return reject(new DOMException("Read was cancelled", "AbortError"));
+        return reject(new DOMException('Read was cancelled', 'AbortError'));
       }
 
       const permission = await obtainPermission();
-      if (permission !== "granted") {
-        onerror("Permission denied.", "NowAllowedError");
+      if (permission !== 'granted') {
+        onerror('Permission denied.', 'NowAllowedError');
         return;
       }
       const watchId = register(options, onreading, onerror);
 
       if (signal) {
-        signal.addEventListener("abort", () => {
+        signal.addEventListener('abort', () => {
           deregister(watchId);
-          reject(new DOMException("Read was cancelled", "AbortError"));
-        })
+          reject(new DOMException('Read was cancelled', 'AbortError'));
+        });
       }
     });
-  }
+  };
 
   constructor(options = {}) {
     super(options);
@@ -211,14 +210,15 @@ class GeolocationSensor extends Sensor {
       accuracy: null,
       altitudeAccuracy: null,
       heading: null,
-      speed: null
-    }
+      speed: null,
+    };
 
     const propertyBag = this[slot];
+    /* eslint-disable-next-line guard-for-in */
     for (const propName in props) {
       propertyBag[propName] = props[propName];
       Object.defineProperty(this, propName, {
-        get: () => propertyBag[propName]
+        get: () => propertyBag[propName],
       });
     }
   }
@@ -236,7 +236,7 @@ class GeolocationSensor extends Sensor {
       this[slot].speed = coords.speed;
 
       this[slot].hasReading = true;
-      this.dispatchEvent(new Event("reading"));
+      this.dispatchEvent(new Event('reading'));
     };
 
     const onerror = (message, type) => {
@@ -244,8 +244,8 @@ class GeolocationSensor extends Sensor {
     };
 
     const permission = await obtainPermission();
-    if (permission !== "granted") {
-      onerror("Permission denied.", "NowAllowedError");
+    if (permission !== 'granted') {
+      onerror('Permission denied.', 'NowAllowedError');
       return;
     }
 
@@ -257,7 +257,7 @@ class GeolocationSensor extends Sensor {
     if (!this[slot].activated) {
       this[notifyActivatedState]();
     }
-  };
+  }
 
   [deactivateCallback]() {
     this[slot].fifo.unsubscribe(this);
@@ -272,5 +272,5 @@ class GeolocationSensor extends Sensor {
     this[slot].speed = null;
 
     this[slot].hasReading = false;
-  };
-}
+  }
+};

@@ -1,15 +1,16 @@
 // @ts-check
 
 function defineProperties(target, descriptions) {
+  /* eslint-disable-next-line guard-for-in */
   for (const property in descriptions) {
     Object.defineProperty(target, property, {
       configurable: true,
-      value: descriptions[property]
+      value: descriptions[property],
     });
   }
 }
 
-const privates = new WeakMap;
+const privates = new WeakMap();
 
 export const EventTargetMixin = (superclass, ...eventNames) => class extends superclass {
   constructor(...args) {
@@ -31,9 +32,9 @@ export const EventTargetMixin = (superclass, ...eventNames) => class extends sup
   }
 
   dispatchEvent(event) {
-    defineProperties(event, { currentTarget: this });
+    defineProperties(event, {currentTarget: this});
     if (!event.target) {
-      defineProperties(event, { target: this });
+      defineProperties(event, {target: this});
     }
 
     const eventTarget = privates.get(this);
@@ -43,27 +44,27 @@ export const EventTargetMixin = (superclass, ...eventNames) => class extends sup
       this.parentNode.dispatchEvent(event);
     }
 
-    defineProperties(event, { currentTarget: null, target: null });
+    defineProperties(event, {currentTarget: null, target: null});
 
     return retValue;
   }
 };
 
-export class EventTarget extends EventTargetMixin(Object) {};
+export class EventTarget extends EventTargetMixin(Object) {}
 
-const __abort__ = Symbol("__abort__");
+const __abort__ = Symbol('__abort__');
 
 export class AbortSignal extends EventTarget {
   constructor() {
     super();
 
     this[__abort__] = {
-      aborted: false
+      aborted: false,
     };
 
-    defineOnEventListener(this, "abort");
-    Object.defineProperty(this, "aborted", {
-      get: () => this[__abort__].aborted
+    defineOnEventListener(this, 'abort');
+    Object.defineProperty(this, 'aborted', {
+      get: () => this[__abort__].aborted,
     });
   }
 
@@ -72,7 +73,7 @@ export class AbortSignal extends EventTarget {
       this[__abort__].aborted = true;
 
       const methodName = `on${event.type}`;
-      if (typeof this[methodName] == "function") {
+      if (typeof this[methodName] == 'function') {
           this[methodName](event);
       }
     }
@@ -87,13 +88,13 @@ export class AbortSignal extends EventTarget {
 export class AbortController {
   constructor() {
     const signal = new AbortSignal();
-    Object.defineProperty(this, "signal", {
-      get: () => signal
+    Object.defineProperty(this, 'signal', {
+      get: () => signal,
     });
   }
 
   abort() {
-    let abort = new Event("abort");
+    let abort = new Event('abort');
     this.signal.dispatchEvent(abort);
   }
 
@@ -107,16 +108,17 @@ function defineOnEventListener(target, name) {
     enumerable: true,
     configurable: false,
     writable: true,
-    value: null
+    value: null,
   });
 }
 
 export function defineReadonlyProperties(target, slot, descriptions) {
   const propertyBag = target[slot];
+  /* eslint-disable-next-line guard-for-in */
   for (const property in descriptions) {
     propertyBag[property] = descriptions[property];
     Object.defineProperty(target, property, {
-      get: () => propertyBag[property]
+      get: () => propertyBag[property],
     });
   }
 }
@@ -127,48 +129,48 @@ export class SensorErrorEvent extends Event {
 
     if (!errorEventInitDict || !(errorEventInitDict.error instanceof DOMException)) {
       throw TypeError(
-        "Failed to construct 'SensorErrorEvent':" +
-        "2nd argument much contain 'error' property"
+        'Failed to construct \'SensorErrorEvent\':' +
+        '2nd argument much contain \'error\' property'
       );
     }
 
-    Object.defineProperty(this, "error", {
+    Object.defineProperty(this, 'error', {
       configurable: false,
       writable: false,
-      value: errorEventInitDict.error
+      value: errorEventInitDict.error,
     });
   }
-};
+}
 
 const SensorState = {
   IDLE: 1,
   ACTIVATING: 2,
   ACTIVE: 3,
-}
+};
 
-export const __sensor__ = Symbol("__sensor__");
+export const __sensor__ = Symbol('__sensor__');
 const slot = __sensor__;
 
-export const notifyError = Symbol("Sensor.notifyError");
-export const notifyActivatedState = Symbol("Sensor.notifyActivatedState");
+export const notifyError = Symbol('Sensor.notifyError');
+export const notifyActivatedState = Symbol('Sensor.notifyActivatedState');
 
-export const activateCallback = Symbol("Sensor.activateCallback");
-export const deactivateCallback = Symbol("Sensor.deactivateCallback");
+export const activateCallback = Symbol('Sensor.activateCallback');
+export const deactivateCallback = Symbol('Sensor.deactivateCallback');
 
 export class Sensor extends EventTarget {
   [activateCallback]() {}
   [deactivateCallback]() {}
 
   [notifyError](message, name) {
-    let error = new SensorErrorEvent("error", {
-      error: new DOMException(message, name)
+    let error = new SensorErrorEvent('error', {
+      error: new DOMException(message, name),
     });
     this.dispatchEvent(error);
     this.stop();
   }
 
   [notifyActivatedState]() {
-    let activate = new Event("activate");
+    let activate = new Event('activate');
     this[slot].activated = true;
     this.dispatchEvent(activate);
     this[slot].state = SensorState.ACTIVE;
@@ -185,31 +187,31 @@ export class Sensor extends EventTarget {
       // Property backing
       activated: false,
       hasReading: false,
-      timestamp: null
+      timestamp: null,
     };
 
-    defineOnEventListener(this, "reading");
-    defineOnEventListener(this, "activate");
-    defineOnEventListener(this, "error");
+    defineOnEventListener(this, 'reading');
+    defineOnEventListener(this, 'activate');
+    defineOnEventListener(this, 'error');
 
-    Object.defineProperty(this, "activated", {
-      get: () => this[slot].activated
+    Object.defineProperty(this, 'activated', {
+      get: () => this[slot].activated,
     });
-    Object.defineProperty(this, "hasReading", {
-      get: () => this[slot].hasReading
+    Object.defineProperty(this, 'hasReading', {
+      get: () => this[slot].hasReading,
     });
-    Object.defineProperty(this, "timestamp", {
-      get: () => this[slot].timestamp
+    Object.defineProperty(this, 'timestamp', {
+      get: () => this[slot].timestamp,
     });
 
     if (window && window.parent != window.top) {
       throw new DOMException(
-        "Only instantiable in a top-level browsing context",
-        "SecurityError"
+        'Only instantiable in a top-level browsing context',
+        'SecurityError'
       );
     }
 
-    if (options && typeof(options.frequency) == "number") {
+    if (options && typeof(options.frequency) == 'number') {
       if (options.frequency > 60) {
         this.frequency = options.frequency;
       }
@@ -217,15 +219,17 @@ export class Sensor extends EventTarget {
   }
 
   dispatchEvent(event) {
-    switch(event.type) {
+    switch (event.type) {
       case 'reading':
       case 'error':
       case 'activate':
       {
         const methodName = `on${event.type}`;
-        if (typeof this[methodName] == "function") {
+        if (typeof this[methodName] == 'function') {
           this[methodName](event);
         }
+        super.dispatchEvent(event);
+        break;
       }
       default:
         super.dispatchEvent(event);
@@ -233,8 +237,8 @@ export class Sensor extends EventTarget {
   }
 
   start() {
-    if (this[slot].state === SensorState.ACTIVATING
-        || this[slot].state === SensorState.ACTIVE) {
+    if (this[slot].state === SensorState.ACTIVATING ||
+        this[slot].state === SensorState.ACTIVE) {
       return;
     }
     this[slot].state = SensorState.ACTIVATING;
