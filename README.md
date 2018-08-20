@@ -15,6 +15,10 @@ In particular, this polyfill will allow the users of modern browsers to get a fe
 - [`RelativeOrientationSensor`](https://w3c.github.io/orientation-sensor/#relativeorientationsensor-interface)
 - [`AbsoluteOrientationSensor`](https://w3c.github.io/orientation-sensor/#absoluteorientationsensor-interface)
 
+`src/geolocation.js` implements the following interface:
+
+- [`GeolocationSensor`](https://w3c.github.io/geolocation-sensor/#geolocationsensor-interface)
+
 How to use the polyfill
 ===
 
