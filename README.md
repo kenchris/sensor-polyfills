@@ -3,7 +3,7 @@ W3C Generic Sensor API polyfills
 
 This is a polyfill for [Generic Sensor](https://w3c.github.io/sensors/)-based [motions sensors](https://w3c.github.io/motion-sensors/) to make migration from the old [DeviceOrientationEvent](https://w3c.github.io/deviceorientation/spec-source-orientation.html#deviceorientation)/[DeviceMotionEvent](https://w3c.github.io/deviceorientation/spec-source-orientation.html#devicemotion) to the new APIs a smoother experience.
 
-In particular, this polyfill will allow the users of modern browsers to get a feel of the new API shape before it ships more broadly. Chrome 63 has a native implementation [behind a flag](#how-to-enable-the-native-implementation-in-chrome) and starting Chrome 67 the feature is [enabled by default](https://www.chromestatus.com/feature/5698781827825664).
+In particular, this polyfill will allow the users of modern browsers to get a feel of the new API shape before it ships more broadly.
 
 `src/motion-sensors.js` implements the following interfaces:
 
@@ -44,16 +44,7 @@ How to enable the native implementation in Chrome
 
 *Chrome 67 or later:* the native implementation is enabled by default.
 
-*Chrome 63-66:* the native implementation is behind the following feature flags:
-
-Generic Sensor (`chrome://flags/#enable-generic-sensor`):
-- `Accelerometer`
-- `Gyroscope`
-- `LinearAccelerationSensor`
-- `AbsoluteOrientationSensor`
-- `RelativeOrientationSensor`
-
-Generic Sensor Extra Classes (`chrome://flags/#enable-generic-sensor-extra-classes`):
+The Generic Sensor Extra Classes (`chrome://flags/#enable-generic-sensor-extra-classes`) feature flag can be activated to enable a few additional sensor types:
 - `AmbientLightSensor`
 - `Magnetometer`
 
@@ -62,11 +53,9 @@ Test suite
 
 Run [web-platform-tests](https://github.com/w3c/web-platform-tests/) with this polyfill enabled [here](https://kenchris.github.io/sensor-polyfills/run-tests.html).
 
-
 Known issues
 ===
 
-- `GravitySensor` and `LinearAccelerationSensor` polyfills do not work on Android with Pixel 2, since [`DeviceMotionEvent`](http://w3c.github.io/deviceorientation/spec-source-orientation.html#devicemotion_event)`.acceleration` returns only null values, see [Chromium bug 796518](https://crbug.com/796518).
 - `AbsoluteOrientationSensor` on iOS uses non-standard [`webkitCompassHeading`](https://developer.apple.com/documentation/webkitjs/deviceorientationevent/1804777-webkitcompassheading) that reports wrong readings if the device is held in its [`portrait-secondary`](https://w3c.github.io/screen-orientation/#dom-orientationtype-portrait-secondary) orientation. Specifically, the `webkitCompassHeading` flips by 180 degrees when tilted only slightly.
 
 Learn more
