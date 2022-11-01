@@ -1,6 +1,6 @@
 {
   "name": "motion-sensors-polyfill",
-  "version": "0.3.5",
+  "version": "0.3.7",
   "description": "A polyfill for the motion sensors based on the W3C Generic Sensor API",
   "main": "motion-sensors.js",
   "module": "motion-sensors.js",
